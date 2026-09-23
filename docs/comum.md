@@ -2,37 +2,58 @@
 
 Lê isto antes de analisar. As regras completas estão em `CLAUDE.md`; os números em `dados/config.json`.
 
-## Princípios
-- **O mercado é o ponto de partida.** A probabilidade justa (odds sem margem, de preferência da Pinnacle) já reflete quase toda a informação pública. Só há valor quando tens uma razão concreta e verificável para discordar dela, ou quando uma casa paga acima da odd justa.
-- **Ajuste máximo de 8 pontos percentuais** face à probabilidade justa do mercado. Se a tua estimativa se afasta mais, quase sempre o erro é teu: revê ou descarta.
+## O teu papel: filtro, não adivinho
+- **Quem encontra as candidatas é o preço.** A varredura (`python3 scripts/odds.py valor`) mostra as seleções em que uma casa paga acima do preço justo da Pinnacle. O teu trabalho é decidir se essa diferença é valor verdadeiro ou uma armadilha.
+- **Não geres palpites próprios.** Opinar contra o mercado perdeu dinheiro nos estudos com LLMs. Contexto que o mercado já conhece (forma, xG, Elo, confrontos diretos) serve para justificar, não para mudar a probabilidade.
+- **Ajuste máximo de 3 pontos percentuais** face ao preço justo, e só com um facto concreto, verificável e recente que o mercado ainda não refletiu (ex.: lesão confirmada há minutos). Por defeito, o ajuste é 0. O `banca.py` recusa ajustes maiores.
 - **Nunca inventes dados.** Cada odd, estatística ou notícia leva fonte e hora da consulta. O que não conseguiste verificar fica marcado como "não verificado".
-- **Contas:** valor esperado (EV) = probabilidade estimada × odd − 1. Odd justa = 1 / probabilidade. Odd mínima aceitável = 1,04 / probabilidade (EV mínimo de 4%).
-- **Zero candidatas é uma resposta válida e frequente.** Não forces apostas.
+- **Contas:**
+  - Valor esperado: EV = probabilidade × odd − 1.
+  - Odd justa: 1 / probabilidade.
+  - Odd mínima: 1,03 / probabilidade contra a Pinnacle, ou 1,05 / probabilidade contra a média das casas.
+- **Zero candidatas aprovadas é uma resposta válida e frequente.**
+
+## Armadilhas a verificar em cada candidata
+1. **Odd desatualizada:** a casa ainda não acompanhou uma notícia ou um movimento. Vê a idade da odd (mais de 60 minutos exige confirmação) e o movimento (`mov`) desde a última varredura.
+2. **Informação que explica a diferença:** lesão, onze, lançador, meteorologia, motivação. Se a notícia favorece o preço mais alto, o valor é real. Se a casa sabe algo que a Pinnacle ainda não refletiu, é armadilha.
+3. **Regras de liquidação diferentes:** desistências no ténis, prolongamento no futebol e no basquetebol, troca de lançador no basebol. A mesma seleção pode pagar de forma diferente consoante a casa.
+4. **Correlação** com outras apostas do dia (mesma equipa, mesmo facto).
+5. **Mercado ou linha diferentes:** o mesmo nome com outra linha (ex.: handicap −1 contra −1,5) não é a mesma aposta.
 
 ## Fontes de dados
-- **Odds:** `python3 scripts/odds.py desportos` lista as competições ativas (não gasta créditos); `python3 scripts/odds.py odds <chave> --horas 36` mostra, por jogo, a odd justa, a melhor odd e o valor. Gasta créditos (500/mês no plano gratuito): pede só `h2h` salvo necessidade, e só as competições relevantes. Se falhar (sem `ODDS_API_KEY` ou rede bloqueada), procura as odds na web e indica a casa e a hora.
-- **Estatísticas e agenda (se a rede o permitir):** `https://site.api.espn.com/apis/site/v2/sports/<desporto>/<liga>/scoreboard?dates=AAAAMMDD` (ex.: `soccer/por.1`, `soccer/eng.1`, `basketball/nba`, `basketball/wnba`, `baseball/mlb`, `tennis/atp`) e `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=AAAA-MM-DD&hydrate=probablePitcher`.
-- **Outras APIs** (odds da Pinnacle, probabilidades de modelos, calendários de ténis, etc.): catálogo em `docs/apis.md`.
-- **Pesquisa web** para o resto: forma, xG, ratings, lesões, notícias.
+- **Varredura de valor:** `python3 scripts/odds.py valor --horas 36`. Os itens numerados são os que se passam ao `banca.py recomendar --item N`.
+- **Detalhe de uma competição:** `python3 scripts/odds.py odds <chave> --mercados h2h,totals`. A lista de chaves ativas sai de `python3 scripts/odds.py desportos`.
+- **Estatísticas e agenda (se a rede o permitir):**
+  - ESPN: `https://site.api.espn.com/apis/site/v2/sports/<desporto>/<liga>/scoreboard?dates=AAAAMMDD` (ex.: `soccer/por.1`, `basketball/nba`, `basketball/wnba`, `baseball/mlb`, `tennis/atp`).
+  - MLB: `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=AAAA-MM-DD&hydrate=probablePitcher`.
+- **Outras APIs:** catálogo em `docs/apis.md`.
+- **Pesquisa web** para notícias, lesões e contexto.
+- **Sem API** (falta `ODDS_API_KEY` ou a rede está bloqueada): não há candidatas de preço. Podes descrever o dia, mas nada entra no plano.
 
 ## Níveis de confiança
-- **Alta:** odds confirmadas em várias casas, informação-chave confirmada (onze, lançador, lesões), a tua estimativa e o sinal de mercado apontam no mesmo sentido, EV ≥ 6%.
-- **Média:** dados bons com uma incerteza relevante (ex.: onze por confirmar), EV ≥ 4%.
-- **Baixa:** poucos dados, odds não verificadas ou estimativa assente num só argumento. **Não entra no plano.**
+- **Alta:**
+  - preço justo da Pinnacle;
+  - odd confirmada há 30 minutos ou menos;
+  - EV ≥ 5%;
+  - informação-chave confirmada (onze, lançador, lesões) e nenhuma notícia contra.
+- **Média:**
+  - Pinnacle com EV ≥ 3%, ou média das casas com EV ≥ 5%;
+  - odd com 60 minutos ou menos;
+  - no máximo uma incerteza por confirmar (ex.: onze).
+- **Baixa:** odd não verificada ou antiga, dúvida sobre regras ou notícias, ou preço justo sem Pinnacle nem casas suficientes. **Não entra no plano.**
 
-## Formato de cada candidata
+## Formato da resposta, por candidata
 ```
-CANDIDATA
-Desporto e competição:
-Jogo/evento (data e hora de Lisboa):
-Mercado e seleção:
-Tipo: simples | live (condição de entrada objetiva) | perna de múltipla
-Melhor odd (casa, hora da consulta):
-Probabilidade justa do mercado (fonte):
-Probabilidade estimada:
-EV:
+CANDIDATA [item N da varredura]
+Veredicto: APROVAR | REJEITAR
+Jogo/evento (data e hora de Lisboa) e competição:
+Mercado e seleção · melhor odd (casa, idade) · preço justo (fonte):
+Porque é que a odd está acima do justo:
+Armadilhas verificadas (1–5 acima): o que viste em cada uma
+Ajuste (pp) e facto que o justifica (fonte, hora): 0 | ±x
+Probabilidade final:
 Confiança (alta/média/baixa) e porquê:
-Justificação (2–4 frases com dados concretos e fontes):
-O que invalidaria a aposta:
+Justificação (2–4 frases, com fontes):
+O que invalidaria a aposta (para a verificação pré-jogo):
 ```
-Se não houver valor: `SEM CANDIDATAS` e o motivo em 1–2 frases.
+Se não houver candidatas do teu desporto: `SEM CANDIDATAS` e o motivo em 1–2 frases.

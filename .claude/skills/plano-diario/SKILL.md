@@ -1,24 +1,29 @@
 ---
 name: plano-diario
-description: Gera o plano diário de apostas (futebol, ténis, NBA/WNBA, basebol) com os subagentes especializados, aplica as regras de risco e banca e grava o plano em planos/. Usar quando o utilizador pede o plano do dia ou quando a Routine diária dispara.
+description: Gera ou atualiza o plano diário de apostas (futebol, ténis, NBA/WNBA, basebol) pelo método "preço primeiro" — varredura de valor contra a Pinnacle, filtro dos subagentes, regras de risco e de banca, registo das recomendações e agendamento das verificações pré-jogo. Usar quando o utilizador pede o plano do dia ou quando as Routines diárias disparam (00:00, 12:00, 18:00).
 ---
 
 # Plano diário
 
-Data: hoje, na hora de Lisboa, ou a data dada como argumento. Depois das 21:00 de Lisboa, faz o plano para o dia seguinte.
+**Data:** hoje, na hora de Lisboa, ou a data dada como argumento. Depois das 21:00 de Lisboa, o plano é do dia seguinte.
 
-- A Routine corre às 00:00 de Lisboa (23:00 no horário de inverno, que pela regra acima dá o plano do dia seguinte), para cobrir os jogos da madrugada (ex.: ténis na Ásia).
-- A essa hora ainda não há onzes nem relatórios de lesões para os jogos da tarde e da noite: nesses casos a confiança máxima é média, e o plano diz o que confirmar antes do jogo.
-- Se `planos/AAAA-MM-DD.md` já existir, não refaças tudo: verifica notícias e odds das apostas do plano (`noticias-lesoes` e `estatistica-dados`), atualiza ou cancela as que mudaram e acrescenta uma secção "Atualização HH:MM".
+**Modo:**
+- Se `planos/AAAA-MM-DD.md` ainda não existe: **plano completo**, com janela de 36 horas.
+- Se já existe (atualizações das 12:00 e das 18:00, ou novo pedido): **atualização**, com janela de 12 horas. Só entram candidatas novas, numa secção "Atualização HH:MM" no fim do plano. O resto não se refaz.
 
-1. **Banca:** `python3 scripts/banca.py estado`. Se aparecer `STOP-LOSS ATINGIDO`, escreve um plano "PAUSA" (banca, motivo, proposta de revisão) e salta para o passo 8.
-2. **Mapa do dia:** subagente `estatistica-dados`, que devolve os eventos das próximas 36 h por desporto e o estado das fontes (API e rede).
-3. **Análise:** em paralelo, um subagente por desporto com jogos: `analista-futebol`, `analista-tenis`, `analista-nba`, `analista-basebol`. Passa a cada um a data, a parte do mapa do seu desporto e as fontes disponíveis.
-4. **Notícias:** `noticias-lesoes` com todas as candidatas.
-5. **Validação:** `estatistica-dados` com as candidatas e os veredictos das notícias.
-6. **Risco:** `gestao-risco` com tudo, que devolve as aprovadas e as rejeitadas.
-7. **Stakes:** `gestao-banca` calcula as stakes das aprovadas com `banca.py`.
-8. **Gravar:** escreve `planos/AAAA-MM-DD.md` no formato de `CLAUDE.md`; faz commit e push.
-9. **Entregar:** mostra o plano ao utilizador. Se a ferramenta PushNotification existir, envia um resumo de uma linha (ex.: "2 apostas, 1,10 € em jogo" ou "Hoje: não apostar").
+Às 00:00 ainda não há onzes nem relatórios de lesões para os jogos da tarde e da noite. Nesses casos, a confiança máxima é média e é a verificação pré-jogo que decide.
 
-Não registes as sugestões em `dados/apostas.csv`: só entram quando o utilizador disser que apostou.
+1. **Estado:** `python3 scripts/banca.py estado`. Se aparecer `STOP-LOSS ATINGIDO` ou `REGRA DE PARAGEM ATIVA`, escreve um plano "PAUSA" (banca, motivo, proposta de revisão) e salta para o passo 8.
+2. **Manutenção e varredura:** o subagente `estatistica-dados` trata dos resultados, do fecho, da avaliação, da varredura de valor (`odds.py valor`) e das promoções das casas do utilizador. Devolve as candidatas por desporto e o estado das fontes. Sem API, o plano é "HOJE: NÃO APOSTAR" porque falta a fonte de odds; salta para o passo 8.
+3. **Filtro:** em paralelo, um analista por desporto com candidatas: `analista-futebol`, `analista-tenis`, `analista-nba`, `analista-basebol`. Cada um recebe só as candidatas do seu desporto: item, jogo, seleção, odd, casa, idade, preço justo, EV e movimento.
+4. **Notícias:** `noticias-lesoes`, com as candidatas aprovadas pelos analistas.
+5. **Validação:** `estatistica-dados`, com as aprovadas e os veredictos das notícias. Confirma as contas e os ajustes.
+6. **Risco:** `gestao-risco` devolve as aprovadas e as rejeitadas.
+7. **Banca:** `gestao-banca` regista as aprovadas com `banca.py recomendar` e devolve as referências. É o código que calcula a stake, e pode recusar.
+8. **Gravar:** escreve `planos/AAAA-MM-DD.md` no formato de `CLAUDE.md` (ou acrescenta-lhe a atualização). Inclui a linha "CLV do agente", tirada do `banca.py avaliacao`. Faz commit e push de `planos/` e `dados/`.
+9. **Pré-jogo:** para cada recomendação nova, agenda com `send_later` a mensagem "Pré-jogo: corre a skill pre-jogo para REF", para 40 minutos antes do início (em UTC). Se o jogo começa daqui a menos de 45 minutos, corre já a skill `pre-jogo`.
+10. **Entregar:** mostra o plano, ou só a atualização, ao utilizador.
+    - Se houver recomendações novas e existir a ferramenta PushNotification, envia um resumo de uma linha (ex.: "1 aposta: Arsenal @ ≥ 2,11 · 0,20 €").
+    - Numa atualização sem novidades, não envies notificação e responde numa linha.
+
+As sugestões vão para `dados/recomendacoes.csv`, para medir o agente. O `dados/apostas.csv` só recebe as apostas que o utilizador disser que fez.
