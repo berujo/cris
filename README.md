@@ -19,6 +19,7 @@ Agente de IA para Claude Code que analisa futebol, ténis, basquetebol (NBA e WN
 ## Dados
 - Regras numéricas: `dados/config.json`. Registo de apostas: `dados/apostas.csv`. Planos: `planos/`.
 - Odds: `scripts/odds.py` usa a [The Odds API](https://the-odds-api.com) (chave gratuita, 500 créditos/mês) através da variável de ambiente `ODDS_API_KEY`.
-- No ambiente cloud, a rede tem de permitir `api.the-odds-api.com`, `site.api.espn.com` e `statsapi.mlb.com`. Sem isso, o agente usa só a pesquisa web.
+- Outras APIs gratuitas (escolhidas do repositório public-apis): `docs/apis.md`.
+- No ambiente cloud, a rede tem de permitir os domínios destas APIs (ou ter acesso total). Sem isso, o agente usa só a pesquisa web.
 
 Nenhuma aposta é garantida. Aposta só o que podes perder. +18.

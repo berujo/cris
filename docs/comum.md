@@ -12,6 +12,7 @@ Lê isto antes de analisar. As regras completas estão em `CLAUDE.md`; os númer
 ## Fontes de dados
 - **Odds:** `python3 scripts/odds.py desportos` lista as competições ativas (não gasta créditos); `python3 scripts/odds.py odds <chave> --horas 36` mostra, por jogo, a odd justa, a melhor odd e o valor. Gasta créditos (500/mês no plano gratuito): pede só `h2h` salvo necessidade, e só as competições relevantes. Se falhar (sem `ODDS_API_KEY` ou rede bloqueada), procura as odds na web e indica a casa e a hora.
 - **Estatísticas e agenda (se a rede o permitir):** `https://site.api.espn.com/apis/site/v2/sports/<desporto>/<liga>/scoreboard?dates=AAAAMMDD` (ex.: `soccer/por.1`, `soccer/eng.1`, `basketball/nba`, `basketball/wnba`, `baseball/mlb`, `tennis/atp`) e `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=AAAA-MM-DD&hydrate=probablePitcher`.
+- **Outras APIs** (odds da Pinnacle, probabilidades de modelos, calendários de ténis, etc.): catálogo em `docs/apis.md`.
 - **Pesquisa web** para o resto: forma, xG, ratings, lesões, notícias.
 
 ## Níveis de confiança
