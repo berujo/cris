@@ -1,0 +1,14 @@
+{
+  "banca_inicial": 20.0,
+  "fracao_kelly": 0.25,
+  "teto_stake_pct": 10,
+  "teto_multipla_pct": 5,
+  "stop_loss_pct": 50,
+  "stake_minima": 0.10,
+  "arredondamento": 0.10,
+  "ev_minimo_pct": 4,
+  "odd_minima": 1.40,
+  "odd_maxima": 4.00,
+  "multipla_max_pernas": 3,
+  "ajuste_max_pp": 8
+}
