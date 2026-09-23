@@ -14,12 +14,17 @@ description: Gera ou atualiza o plano diário de apostas (futebol, ténis, NBA/W
 Às 00:00 ainda não há onzes nem relatórios de lesões para os jogos da tarde e da noite. Nesses casos, a confiança máxima é média e é a verificação pré-jogo que decide.
 
 1. **Estado:** `python3 scripts/banca.py estado`. Se aparecer `STOP-LOSS ATINGIDO` ou `REGRA DE PARAGEM ATIVA`, escreve um plano "PAUSA" (banca, motivo, proposta de revisão) e salta para o passo 8.
-2. **Manutenção e varredura:** o subagente `estatistica-dados` trata dos resultados, do fecho, da avaliação, da varredura de valor (`odds.py valor`) e das promoções das casas do utilizador. Devolve as candidatas por desporto e o estado das fontes. Sem API, o plano é "HOJE: NÃO APOSTAR" porque falta a fonte de odds; salta para o passo 8.
+2. **Fontes, manutenção e varredura:** o subagente `estatistica-dados` corre primeiro `odds.py fontes` e depois:
+   - **Com a The Odds API:** resultados, fecho, avaliação, varredura de valor (`odds.py valor`) e promoções das casas do utilizador. Devolve as candidatas por desporto.
+   - **Sem ela:** `odds.py alvos`, com as fontes do GitHub. Os alvos entram no plano, na secção "Alvos para as tuas casas", depois de passarem pelos analistas e pelas notícias (passos 3 a 6). Dá prioridade aos marcados com ★ e aos do desporto de que o utilizador falou.
+   - **Se o ténis ainda vier com a data de ontem** (a fonte atualiza pouco depois das 00:00 UTC): agenda com `send_later`, 90 minutos depois, "Alvos de ténis: corre odds.py alvos --desporto tenis e acrescenta-os ao plano de hoje".
+   - **Sem nenhuma fonte:** o plano é "HOJE: NÃO APOSTAR" e explica que falta a fonte de odds; salta para o passo 8.
 3. **Filtro:** em paralelo, um analista por desporto com candidatas: `analista-futebol`, `analista-tenis`, `analista-nba`, `analista-basebol`. Cada um recebe só as candidatas do seu desporto: item, jogo, seleção, odd, casa, idade, preço justo, EV e movimento.
 4. **Notícias:** `noticias-lesoes`, com as candidatas aprovadas pelos analistas.
 5. **Validação:** `estatistica-dados`, com as aprovadas e os veredictos das notícias. Confirma as contas e os ajustes.
 6. **Risco:** `gestao-risco` devolve as aprovadas e as rejeitadas.
 7. **Banca:** `gestao-banca` regista as aprovadas com `banca.py recomendar` e devolve as referências. É o código que calcula a stake, e pode recusar.
+   Os alvos do GitHub só se registam quando o utilizador disser a odd e a casa onde a encontrou (`banca.py recomendar --alvo N --odd O --casa C`).
 8. **Gravar:** escreve `planos/AAAA-MM-DD.md` no formato de `CLAUDE.md` (ou acrescenta-lhe a atualização). Inclui a linha "CLV do agente", tirada do `banca.py avaliacao`. Faz commit e push de `planos/` e `dados/`.
 9. **Pré-jogo:** para cada recomendação nova, agenda com `send_later` a mensagem "Pré-jogo: corre a skill pre-jogo para REF", para 40 minutos antes do início (em UTC). Se o jogo começa daqui a menos de 45 minutos, corre já a skill `pre-jogo`.
 10. **Entregar:** mostra o plano, ou só a atualização, ao utilizador.

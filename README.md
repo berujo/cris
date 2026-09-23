@@ -27,7 +27,9 @@ O orquestrador é o `CLAUDE.md`. Os subagentes estão em `.claude/agents/`:
   - `odds` mostra o detalhe de uma competição;
   - `fecho` guarda a odd de fecho;
   - `resultados` liquida as recomendações;
-  - `desportos` lista as competições ativas.
+  - `desportos` lista as competições ativas;
+  - `fontes` mostra que fontes estão acessíveis agora;
+  - `alvos` lê as fontes do GitHub (ténis e futebol, com a Pinnacle) e dá a odd mínima a procurar nas tuas casas.
 - **`scripts/banca.py`:**
   - `estado`, `stake`, `metricas` e `avaliacao`;
   - `recomendar` aplica as regras em código e recusa o que as violar;

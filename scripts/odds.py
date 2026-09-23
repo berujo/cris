@@ -6,19 +6,27 @@
   python3 scripts/odds.py odds <chave> [--horas 36] [--mercados h2h,totals]
   python3 scripts/odds.py fecho [--minutos 90] [--ref 2026-09-25#1 ...]  # prob. justa perto do início (CLV)
   python3 scripts/odds.py resultados                           # liquida as recomendações já terminadas
+  python3 scripts/odds.py fontes                               # que fontes de odds estão acessíveis agora
+  python3 scripts/odds.py alvos [--horas 36] [--desporto tenis futebol] [--challengers]
+                                                               # odds mínimas a partir das fontes no GitHub
 
 Precisa de ODDS_API_KEY (chave gratuita em https://the-odds-api.com). As listas de desportos e de jogos não
 gastam créditos; as odds gastam 1 crédito por mercado e região; os resultados gastam 2 por desporto.
+Sem a API (ou com a rede fechada), 'alvos' usa fontes públicas no GitHub, que passam pela rede do ambiente.
 """
 import argparse
+import io
 import json
 import math
 import os
+import re
 import sys
 import urllib.parse
 import urllib.request
+import zipfile
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from xml.etree import ElementTree
 from zoneinfo import ZoneInfo
 
 import banca
@@ -28,6 +36,13 @@ LISBOA = ZoneInfo("Europe/Lisbon")
 FMT = "%Y-%m-%dT%H:%M:%SZ"
 GRUPOS = {"Soccer", "Tennis", "Basketball", "Baseball"}
 restantes = None  # créditos da API, atualizados a cada pedido
+# Fontes públicas atualizadas por GitHub Actions (o GitHub passa pela rede do ambiente). Ver docs/apis.md.
+FONTES = {
+    "tenis": "https://raw.githubusercontent.com/Mriganka-codes/tennis_data/main/matches.json",
+    "futebol": "https://raw.githubusercontent.com/aimidas1/pinnacle_bet365_odds_data/main/data/season_2026/"
+               "next_games/next_games.xlsx",
+}
+HORA_TENNISEXPLORER = ZoneInfo("Europe/Prague")  # a fonte de ténis dá as horas na hora da Europa Central
 
 
 def pedir(caminho, **params):
@@ -108,6 +123,153 @@ def competicoes(cfg):
     ativas = sorted(d["key"] for d in pedir("sports") if d["active"])
     return [k for padrao in cfg["competicoes"] for k in ativas
             if k == padrao or (padrao.endswith("*") and k.startswith(padrao[:-1]))]
+
+
+def baixar(url):
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "cris"}), timeout=30) as r:
+        return r.read()
+
+
+def ler_xlsx(dados):
+    """Primeira folha de um .xlsx como lista de dicionários, só com a biblioteca padrão."""
+    m = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+    with zipfile.ZipFile(io.BytesIO(dados)) as z:
+        partilhadas = []
+        if "xl/sharedStrings.xml" in z.namelist():
+            partilhadas = ["".join(t.text or "" for t in si.iter(f"{m}t"))
+                           for si in ElementTree.fromstring(z.read("xl/sharedStrings.xml")).iter(f"{m}si")]
+        folha = ElementTree.fromstring(z.read("xl/worksheets/sheet1.xml"))
+    linhas = []
+    for row in folha.iter(f"{m}row"):
+        valores = {}
+        for c in row.iter(f"{m}c"):
+            v = c.find(f"{m}v")
+            if c.get("t") == "s":
+                valor = partilhadas[int(v.text)]
+            elif c.get("t") == "inlineStr":
+                valor = "".join(t.text or "" for t in c.iter(f"{m}t"))
+            else:
+                valor = None if v is None else v.text
+            valores[re.match(r"[A-Z]+", c.get("r")).group()] = valor
+        linhas.append(valores)
+    cabecalho = linhas[0] if linhas else {}
+    return [{cabecalho[k]: v for k, v in linha.items() if k in cabecalho} for linha in linhas[1:]]
+
+
+def numero(v):
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return None
+    return x if x > 1 else None
+
+
+def data_utc(v):
+    """Data da folha de cálculo: texto ISO ou número de série do Excel, em UTC."""
+    try:
+        return datetime(1899, 12, 30, tzinfo=timezone.utc) + timedelta(days=float(v))
+    except (TypeError, ValueError):
+        return datetime.fromisoformat(str(v)).replace(tzinfo=timezone.utc)
+
+
+def alvos_tenis():
+    d = json.loads(baixar(FONTES["tenis"]))
+    dia = datetime.fromisoformat(d["last_updated"]).date()  # dia da recolha = dia da página da fonte
+    itens = []
+    for jogo in d["matches"]:
+        cotacoes = [numero(jogo.get("odds1")), numero(jogo.get("odds2"))]
+        if not all(cotacoes) or not re.fullmatch(r"\d{2}:\d{2}", jogo.get("time") or ""):
+            continue
+        h, mi = map(int, jogo["time"].split(":"))
+        inicio = datetime(dia.year, dia.month, dia.day, h, mi, tzinfo=HORA_TENNISEXPLORER).astimezone(timezone.utc)
+        nomes = [re.sub(r"\s*\([^)]*\)$", "", jogo[k]) for k in ("player1", "player2")]  # sem cabeças de série
+        for nome, odd, justa in zip(nomes, cotacoes, shin(cotacoes)):
+            itens.append({"desporto": "Ténis", "competicao": f"{jogo.get('tour', '')} {jogo['tournament']}".strip(),
+                          "evento": f"{nomes[0]} vs {nomes[1]}", "inicio": inicio.strftime(FMT), "mercado": "h2h",
+                          "selecao": nome, "ponto": None, "justa": justa, "fonte": "consenso",
+                          "odd_fonte": odd, "casa_fonte": "tennisexplorer"})
+    return itens, f"tennisexplorer via GitHub, recolhido a {d['last_updated'][:16].replace('T', ' ')} UTC"
+
+
+def alvos_futebol():
+    itens = []
+    for linha in ler_xlsx(baixar(FONTES["futebol"])):
+        if " vs " not in (linha.get("fixture_name") or "") or not linha.get("starting_at"):
+            continue
+        casa, fora = [x.strip() for x in linha["fixture_name"].split(" vs ", 1)]
+        # Na fonte, os rótulos Home/Away do 1X2 estão trocados: "Away" é a equipa da casa (confirmado a 24/09/2026).
+        mercados = [("h2h", None, [casa, "Empate", fora], ("Away", "Draw", "Home"), "Match_Odds_{}")]
+        mercados += [("totals", linha_, [f"Over {linha_:g}", f"Under {linha_:g}"], ("Over", "Under"),
+                      "Lines_Goals_{}_" + f"{linha_:g}") for linha_ in (2.5, 3.5)]
+        for mercado, ponto, selecoes, rotulos, modelo in mercados:
+            pin = [numero(linha.get("Pinnacle_" + modelo.format(r))) for r in rotulos]
+            b365 = [numero(linha.get("Bet365_" + modelo.format(r))) for r in rotulos]
+            if not all(pin):
+                continue
+            for nome, justa, odd in zip(selecoes, shin(pin), b365):
+                itens.append({"desporto": "Futebol", "competicao": linha.get("league_info") or "",
+                              "evento": f"{casa} vs {fora}", "inicio": data_utc(linha["starting_at"]).strftime(FMT),
+                              "mercado": mercado, "selecao": nome, "ponto": ponto, "justa": justa,
+                              "fonte": "pinnacle", "odd_fonte": odd, "casa_fonte": "Bet365"})
+    return itens, "Pinnacle e Bet365 via GitHub (atualização diária)"
+
+
+def cmd_alvos(args):
+    """Odd mínima a procurar nas casas do utilizador, a partir do preço justo das fontes no GitHub."""
+    cfg, agora = banca.config(), datetime.now(timezone.utc)
+    b = banca.banca(cfg, banca.ler("apostas.csv"))
+    itens = []
+    for nome, funcao in (("tenis", alvos_tenis), ("futebol", alvos_futebol)):
+        if args.desporto and nome not in args.desporto:
+            continue
+        try:
+            novos, nota = funcao()
+        except Exception as e:  # fonte em baixo, bloqueada ou com formato mudado
+            print(f"{nome}: fonte indisponível ({e})")
+            continue
+        itens += novos
+        print(f"{nome}: {nota}")
+    limite = agora + timedelta(hours=args.horas)
+    itens = [s for s in itens if agora < datetime.fromisoformat(s["inicio"]) <= limite
+             and (args.challengers or not re.search(r"challenger|itf", s["competicao"], re.I))]
+    for s in itens:
+        s["minima"] = (1 + banca.ev_minimo(cfg, s["fonte"])) / s["justa"]
+        s["stake"] = banca.calcular_stake(cfg, b, s["justa"], s["minima"] + 1e-9)[0]
+    itens = sorted((s for s in itens if cfg["odd_minima"] <= s["minima"] <= cfg["odd_maxima"]),
+                   key=lambda s: (s["inicio"], s["evento"]))
+    for i, s in enumerate(itens, 1):
+        s["id"] = i
+    (banca.DADOS / "alvos.json").write_text(json.dumps({"hora": agora.strftime(FMT), "itens": itens},
+                                                       ensure_ascii=False, indent=1))
+    print(f"{len(itens)} alvos nas próximas {args.horas} h (★ = a própria fonte já paga acima da odd mínima).")
+    for s in itens:
+        hora = datetime.fromisoformat(s["inicio"]).astimezone(LISBOA)
+        estrela = " ★" if s["odd_fonte"] and s["odd_fonte"] >= s["minima"] else ""
+        fonte = f"{s['odd_fonte']:.2f} ({s['casa_fonte']})" if s["odd_fonte"] else "—"
+        print(f"[{s['id']}] {hora:%d/%m %H:%M} {s['competicao']} · {s['evento']} · {s['mercado']} {s['selecao']} · "
+              f"justa {1 / s['justa']:.2f} ({s['fonte']}) · odd mínima {s['minima']:.2f} · "
+              f"stake {banca.eur(s['stake'])} · fonte {fonte}{estrela}")
+
+
+def cmd_fontes(_):
+    """Diz que fontes de odds e de dados estão acessíveis a partir deste ambiente, agora."""
+    if not os.environ.get("ODDS_API_KEY"):
+        print("The Odds API: sem ODDS_API_KEY")
+    else:
+        try:
+            pedir("sports")
+            print(f"The Odds API: ok ({restantes} créditos)")
+        except Exception as e:
+            print(f"The Odds API: indisponível ({e})")
+    for nome, url in (("ESPN", "https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard"),
+                      ("MLB Stats", "https://statsapi.mlb.com/api/v1/sports"),
+                      ("GitHub ténis (tennisexplorer)", FONTES["tenis"]),
+                      ("GitHub futebol (Pinnacle/Bet365)", FONTES["futebol"])):
+        try:
+            baixar(url)
+            print(f"{nome}: ok")
+        except Exception as e:
+            print(f"{nome}: indisponível ({e})")
 
 
 def cmd_desportos(_):
@@ -259,6 +421,11 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("desportos")
     sub.add_parser("resultados")
+    sub.add_parser("fontes")
+    a = sub.add_parser("alvos")
+    a.add_argument("--horas", type=int, default=36)
+    a.add_argument("--desporto", nargs="*", choices=["tenis", "futebol"])
+    a.add_argument("--challengers", action="store_true", help="incluir Challengers e ITF")
     v = sub.add_parser("valor")
     v.add_argument("--horas", type=int, default=36)
     v.add_argument("--limiar", type=float, help="EV mínimo em %% (por omissão, o de config.json)")

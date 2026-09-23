@@ -4,6 +4,26 @@ Escolhidas da secção "Sports & Fitness" do repositório [public-apis](https://
 
 Regras de uso: tenta primeiro as que não pedem chave. As chaves vêm de variáveis de ambiente e nunca se mostram nem se gravam no repositório. Se a rede bloquear um domínio, diz qual foi e passa à pesquisa web. Confirma os endpoints na documentação de cada API antes do primeiro uso.
 
+## Acessíveis a partir deste ambiente, sem mexer na rede
+Com a rede atual, só passam os seguintes serviços:
+- GitHub: `raw.githubusercontent.com`, `codeload.github.com` e `api.github.com` (parcial);
+- `gitlab.com` e `storage.googleapis.com`;
+- os registos de pacotes (PyPI, npm e afins).
+
+Estas fontes, publicadas por GitHub Actions, já estão ligadas ao `scripts/odds.py` (`fontes` e `alvos`):
+
+| Fonte | O que dá | Atualização | Estado (24/09/2026) |
+|---|---|---|---|
+| [Mriganka-codes/tennis_data](https://github.com/Mriganka-codes/tennis_data) | Encontros ATP, WTA e Challengers do dia, com odds do tennisexplorer (margem típica de média de casas) | De 6 em 6 h (00, 06, 12 e 18 UTC) | ✅ ligada |
+| [aimidas1/pinnacle_bet365_odds_data](https://github.com/aimidas1/pinnacle_bet365_odds_data) | Próximos jogos de futebol com odds da **Pinnacle** e da Bet365 (1X2 e mais/menos golos). Os rótulos Home/Away do 1X2 estão trocados na fonte | Diária | ✅ ligada |
+| [jriordan55/mlb_pbp_model](https://github.com/jriordan55/mlb_pbp_model) | Odds da MLB (DraftKings, FanDuel, BetMGM) | Parou a 20/07/2026 | ❌ desatualizada |
+| [Tennismylife/TML-Database](https://github.com/Tennismylife/TML-Database) | Resultados ATP (sem odds) | Diária | contexto |
+
+**Regra:** procura sempre fontes a que o ambiente consiga chegar.
+- Começa por `python3 scripts/odds.py fontes`.
+- Se um desporto ficar sem cobertura, procura no [public-apis](https://github.com/public-apis/public-apis) e na web por dados publicados num dos serviços acessíveis. Em geral são repositórios do GitHub com GitHub Actions.
+- Antes de ler um repositório novo, pede acesso de leitura com `add_repo`. Testa se chega e se está atualizado, e só então acrescenta-o a `FONTES` no `odds.py` e a esta tabela.
+
 ## Odds e probabilidades justas
 | API | O que dá | Chave | Documentação |
 |---|---|---|---|

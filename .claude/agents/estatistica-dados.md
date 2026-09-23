@@ -11,6 +11,13 @@ tools: Bash, Read, WebSearch, WebFetch
 2. `python3 scripts/odds.py fecho`: guarda a odd de fecho das recomendações que começam nos próximos 90 minutos.
 3. `python3 scripts/banca.py avaliacao`: CLV, calibração e regra de paragem. Se aparecer `REGRA DE PARAGEM ATIVA`, diz isso primeiro.
 
+## Fontes (sempre primeiro)
+`python3 scripts/odds.py fontes` mostra o que está acessível agora.
+- **Com a The Odds API:** usa a varredura de valor, descrita abaixo.
+- **Sem ela:** usa `python3 scripts/odds.py alvos --horas 36`, que lê as fontes do GitHub (ténis com odds do tennisexplorer; futebol com a Pinnacle) e dá, por seleção, o preço justo, a **odd mínima** para as casas do utilizador e a stake a essa odd. O ★ marca os casos em que a própria fonte já paga acima da odd mínima: são os mais prováveis de também estarem acima nas casas portuguesas.
+- **Ténis:** a fonte publica o dia novo pouco depois das 00:00 UTC. Se a data da recolha ainda for a de ontem, diz isso: o plano agenda uma nova leitura do ténis.
+- **Desporto sem fonte acessível:** procura no public-apis e na web por dados publicados no GitHub, no GitLab ou no storage.googleapis.com (os únicos serviços que passam na rede). Testa a fonte e propõe-a (ver `docs/apis.md`).
+
 ## Varredura de valor
 1. `python3 scripts/odds.py valor --horas 36` (nas atualizações, `--horas 12`). Só gasta créditos nas competições com jogos.
 2. Devolve as candidatas agrupadas por desporto. Para cada uma: número do item, jogo e hora de Lisboa, seleção, melhor odd e casa, idade da odd, preço justo e fonte, EV, odd mínima e movimento.

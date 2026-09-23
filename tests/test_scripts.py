@@ -212,3 +212,87 @@ class TestDiaCompleto(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def xlsx(linhas):
+    """Um .xlsx mínimo (strings partilhadas), feito só com a biblioteca padrão."""
+    import zipfile
+    textos, celulas = [], []
+    for i, linha in enumerate(linhas, 1):
+        cs = []
+        for j, v in enumerate(linha):
+            ref = f"{chr(65 + j)}{i}"
+            if isinstance(v, str):
+                textos.append(v)
+                cs.append(f'<c r="{ref}" t="s"><v>{len(textos) - 1}</v></c>')
+            elif v is not None:
+                cs.append(f'<c r="{ref}"><v>{v}</v></c>')
+        celulas.append(f'<row r="{i}">{"".join(cs)}</row>')
+    ns = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+    b = io.BytesIO()
+    with zipfile.ZipFile(b, "w") as z:
+        z.writestr("xl/worksheets/sheet1.xml", f'<worksheet {ns}><sheetData>{"".join(celulas)}</sheetData></worksheet>')
+        z.writestr("xl/sharedStrings.xml", f"<sst {ns}>" + "".join(f"<si><t>{t}</t></si>" for t in textos) + "</sst>")
+    return b.getvalue()
+
+
+class TestFontesGithub(unittest.TestCase):
+    """Alvos a partir das fontes no GitHub (ténis do tennisexplorer; futebol com Pinnacle e Bet365)."""
+
+    def setUp(self):
+        self.pasta = Path(tempfile.mkdtemp())
+        shutil.copy(RAIZ / "dados" / "config.json", self.pasta)
+        self.dados_originais, banca.DADOS = banca.DADOS, self.pasta
+        self.baixar_original = odds.baixar
+        amanha = datetime.now(timezone.utc) + timedelta(days=1)
+        self.tenis = {"last_updated": amanha.strftime("%Y-%m-%dT00:05:00"), "count": 2, "matches": [
+            {"tournament": "Chengdu", "time": "12:00", "player1": "Shapovalov D. (7)", "player2": "Griekspoor T.",
+             "odds1": 1.67, "odds2": 2.19, "tour": "ATP"},
+            {"tournament": "Genoa challenger", "time": "12:00", "player1": "A", "player2": "B",
+             "odds1": 1.80, "odds2": 1.95, "tour": "ATP"}]}
+        cab = ["league_info", "fixture_name", "starting_at", "Bet365_Match_Odds_Away", "Bet365_Match_Odds_Draw",
+               "Bet365_Match_Odds_Home", "Pinnacle_Match_Odds_Away", "Pinnacle_Match_Odds_Draw",
+               "Pinnacle_Match_Odds_Home"]
+        self.futebol = xlsx([cab, ["La Liga 2", "Girona vs Albacete", amanha.strftime("%Y-%m-%d 18:30:00"),
+                                   1.50, 4.2, 5.75, 1.52, 4.47, 5.70]])
+        odds.baixar = lambda url: json.dumps(self.tenis).encode() if url == odds.FONTES["tenis"] else self.futebol
+
+    def tearDown(self):
+        banca.DADOS, odds.baixar = self.dados_originais, self.baixar_original
+        shutil.rmtree(self.pasta)
+
+    def test_futebol_com_rotulos_trocados_na_fonte(self):
+        itens, _ = odds.alvos_futebol()
+        girona = next(s for s in itens if s["selecao"] == "Girona")  # a coluna "Away" é a equipa da casa
+        self.assertAlmostEqual(girona["justa"], odds.shin([1.52, 4.47, 5.70])[0])
+        self.assertEqual((girona["odd_fonte"], girona["fonte"]), (1.50, "pinnacle"))
+        self.assertEqual({s["selecao"] for s in itens}, {"Girona", "Empate", "Albacete"})
+
+    def test_tenis_hora_da_europa_central_e_sem_cabeca_de_serie(self):
+        itens, _ = odds.alvos_tenis()
+        s = itens[0]
+        self.assertEqual((s["selecao"], s["evento"]), ("Shapovalov D.", "Shapovalov D. vs Griekspoor T."))
+        self.assertEqual(datetime.fromisoformat(s["inicio"]).astimezone(odds.HORA_TENNISEXPLORER).hour, 12)
+
+    def test_alvos_e_recomendacao_com_a_odd_da_casa(self):
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            odds.cmd_alvos(argparse.Namespace(horas=72, desporto=None, challengers=False))
+        itens = json.loads((self.pasta / "alvos.json").read_text())["itens"]
+        self.assertFalse(any("challenger" in s["competicao"] for s in itens))
+        alvo = next(s for s in itens if s["selecao"] == "Griekspoor T.")
+        self.assertAlmostEqual(alvo["minima"], 1.05 / alvo["justa"])  # sem Pinnacle, exige 5%
+
+        campos = {c: None for c in banca.REC}
+        campos.update(alvo=alvo["id"], confianca="média")
+        with self.assertRaises(SystemExit):  # falta a odd encontrada na casa
+            banca.cmd_recomendar(banca.config(), [], argparse.Namespace(**campos))
+        campos.update(odd=round(alvo["minima"] + 0.05, 2), casa="Betano")
+        with contextlib.redirect_stdout(io.StringIO()):
+            banca.cmd_recomendar(banca.config(), [], argparse.Namespace(**campos))
+        r = banca.ler("recomendacoes.csv")[0]
+        self.assertEqual((r["casa"], r["sport_key"], r["fonte_justa"]), ("Betano", "github", "consenso"))
+        self.assertEqual(r["prob_final"], r["prob_justa"])  # sem ajuste por defeito
+
+    def test_ler_xlsx(self):
+        self.assertEqual(odds.ler_xlsx(xlsx([["a", "b"], ["x", 1.5]])), [{"a": "x", "b": "1.5"}])

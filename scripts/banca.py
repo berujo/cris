@@ -4,6 +4,7 @@
   python3 scripts/banca.py estado
   python3 scripts/banca.py stake --prob 0.55 --odd 2.10 [--multipla]
   python3 scripts/banca.py recomendar --item 3 --prob-final 0.47 --confianca média    # item de 'odds.py valor'
+  python3 scripts/banca.py recomendar --alvo 5 --odd 1.98 --casa Betano --confianca média  # alvo de 'odds.py alvos'
   python3 scripts/banca.py recomendar --desporto Ténis --competicao "ATP Tóquio" --evento "A vs B" \
       --mercado h2h --selecao A --odd 2.10 --casa Betano --prob-justa 0.45 --fonte-justa pinnacle \
       --prob-final 0.46 --confianca média
@@ -182,19 +183,28 @@ def cmd_recomendar(cfg, apostas, args):
     if regra_paragem(cfg, recs):
         sys.exit("REGRA DE PARAGEM ATIVA: não recomendar; rever o método.")
     r = {c: "" for c in REC}
-    if args.item:
-        itens = json.loads((DADOS / "varredura.json").read_text())["itens"]
-        s = next((x for x in itens if x["id"] == args.item), None)
+    for opcao, ficheiro in (("item", "varredura.json"), ("alvo", "alvos.json")):
+        numero = getattr(args, opcao, None)
+        if not numero:
+            continue
+        s = next((x for x in json.loads((DADOS / ficheiro).read_text())["itens"] if x["id"] == numero), None)
         if not s:
-            sys.exit(f"O item {args.item} não existe na última varredura")
-        r.update(desporto=DESPORTOS.get(s["sport_key"].split("_")[0], ""), competicao=s["competicao"],
-                 evento=s["evento"], sport_key=s["sport_key"], evento_id=s["evento_id"], inicio=s["inicio"],
-                 mercado=s["mercado"], selecao=s["selecao"], ponto="" if s["ponto"] is None else s["ponto"],
-                 odd=s["melhor"], casa=s["casa"], prob_justa=f"{s['justa']:.4f}", fonte_justa=s["fonte"])
+            sys.exit(f"O {opcao} {numero} não existe em {ficheiro}")
+        r.update(competicao=s["competicao"], evento=s["evento"], inicio=s["inicio"], mercado=s["mercado"],
+                 selecao=s["selecao"], ponto="" if s["ponto"] is None else s["ponto"],
+                 prob_justa=f"{s['justa']:.4f}", fonte_justa=s["fonte"])
+        if opcao == "item":
+            r.update(desporto=DESPORTOS.get(s["sport_key"].split("_")[0], ""), sport_key=s["sport_key"],
+                     evento_id=s["evento_id"], odd=s["melhor"], casa=s["casa"])
+        elif args.odd is None or not args.casa:
+            sys.exit("Com --alvo, indica a odd e a casa onde a encontraste (--odd e --casa).")
+        else:
+            r.update(desporto=s["desporto"], sport_key="github")
     r.update({k: str(v) for k, v in vars(args).items() if k in REC and v is not None})
-    for campo in ("evento", "selecao", "odd", "prob_justa", "prob_final"):
+    r["prob_final"] = r["prob_final"] or r["prob_justa"]  # por defeito, sem ajuste ao preço justo
+    for campo in ("evento", "selecao", "odd", "prob_justa"):
         if not r[campo]:
-            sys.exit(f"Falta --{campo.replace('_', '-')} (ou usa --item)")
+            sys.exit(f"Falta --{campo.replace('_', '-')} (ou usa --item ou --alvo)")
     r["data"], r["tipo"] = r["data"] or hoje(), r["tipo"] or "simples"
     stake, motivo = validar(cfg, b, r)
     if motivo:
@@ -355,6 +365,7 @@ def main():
     s.add_argument("--multipla", action="store_true")
     rec = sub.add_parser("recomendar")
     rec.add_argument("--item", type=int, help="número do item na última 'odds.py valor'")
+    rec.add_argument("--alvo", type=int, help="número do alvo no último 'odds.py alvos' (exige --odd e --casa)")
     for campo in ("data", "desporto", "competicao", "evento", "sport-key", "evento-id", "inicio", "mercado",
                   "selecao", "ponto", "casa", "prob-justa", "prob-final", "confianca", "notas"):
         rec.add_argument(f"--{campo}")

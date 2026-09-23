@@ -7,6 +7,7 @@ O lucro a longo prazo vem de apostar a preços acima do justo, não de adivinhar
 - **Preço justo:** odds da Pinnacle sem margem, calculadas pelo método de Shin (`scripts/odds.py`). Sem Pinnacle, usa-se a média das casas e exige-se mais valor.
 - **Valor:** só existe quando uma casa paga acima do preço justo. O EV tem de ser ≥ 3% contra a Pinnacle, ou ≥ 5% contra a média.
 - **Subagentes como filtros:** procuram razões para NÃO apostar (odd desatualizada, regras de liquidação, notícias). Só ajustam a probabilidade até 3 pontos percentuais, e apenas com um facto concreto e verificável.
+- **Fontes:** começa sempre por `python3 scripts/odds.py fontes`. Com a The Odds API, usa `odds.py valor`, que compara com as odds das casas. Sem ela, usa `odds.py alvos`, que lê as fontes do GitHub e dá a odd mínima que o utilizador deve procurar nas casas dele. Se faltar cobertura, procura novas fontes acessíveis (ver `docs/apis.md`).
 - **Métrica principal: o CLV**, ou seja, a odd apostada face à probabilidade justa no fecho. O lucro só diz alguma coisa ao fim de milhares de apostas; o CLV dá sinal ao fim de dezenas.
 
 ## Regras (invioláveis)
@@ -71,6 +72,10 @@ CLV do agente: +2,1% em 34 recomendações com fecho (regra de paragem: faltam 6
 - **Stake:** 0,20 € (1,0% da banca)
 - **Justificação:** porque é que a odd está acima do justo e porque não é armadilha (2–4 frases, com fontes).
 - **Pré-jogo:** verificação às 19:20.
+
+### Alvos para as tuas casas (quando não há odds das casas na API)
+- 24/09 05:00 · ATP Chengdu · Shapovalov vs Griekspoor · **Griekspoor ≥ 2,45** · stake 0,10 € · preço justo 2,33 (consenso)
+  Se encontrares a odd mínima ou mais numa das tuas casas, aposta a stake indicada e diz-me a odd e a casa.
 
 ### Analisadas e rejeitadas
 - Uma linha por candidata relevante, com o motivo.
