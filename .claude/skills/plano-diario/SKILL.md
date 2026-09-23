@@ -1,6 +1,6 @@
 ---
 name: plano-diario
-description: Gera o plano diário de apostas (futebol, ténis, NBA, basebol) com os subagentes especializados, aplica as regras de risco e banca e grava o plano em planos/. Usar quando o utilizador pede o plano do dia ou quando a Routine diária dispara.
+description: Gera o plano diário de apostas (futebol, ténis, NBA/WNBA, basebol) com os subagentes especializados, aplica as regras de risco e banca e grava o plano em planos/. Usar quando o utilizador pede o plano do dia ou quando a Routine diária dispara.
 ---
 
 # Plano diário

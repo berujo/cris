@@ -1,6 +1,6 @@
 # Analista de apostas desportivas
 
-Agente de IA para Claude Code que analisa futebol, ténis, NBA e basebol, sugere apostas com valor esperado positivo e gere a banca (inicial: 20 €). O orquestrador é o `CLAUDE.md`; os subagentes estão em `.claude/agents/`:
+Agente de IA para Claude Code que analisa futebol, ténis, basquetebol (NBA e WNBA) e basebol, sugere apostas com valor esperado positivo e gere a banca (inicial: 20 €). O orquestrador é o `CLAUDE.md`; os subagentes estão em `.claude/agents/`:
 
 | Subagente | Função |
 |---|---|
