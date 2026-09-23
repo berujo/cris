@@ -21,7 +21,7 @@ Este repositório é um agente de IA que funciona como analista profissional de 
 - **No máximo uma aposta por jogo.**
 
 ## Fluxos
-- **Plano diário:** skill `plano-diario` (dispara todos os dias às 10:00 de Lisboa através de uma Routine, ou quando o utilizador pede).
+- **Plano diário:** skill `plano-diario` (dispara todos os dias às 00:00 de Lisboa através de uma Routine, para apanhar os jogos da madrugada, ou quando o utilizador pede).
 - **Resultados:** skill `resultado`, sempre que o utilizador comunica uma aposta ou um resultado.
 - **Métricas:** `python3 scripts/banca.py metricas` (lucro, ROI, yield, taxa de acerto, drawdown, evolução da banca).
 - `dados/apostas.csv` é a fonte de verdade. Só entram apostas que o utilizador diz ter feito. Depois de mudar `dados/` ou `planos/`, faz commit e push.

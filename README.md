@@ -11,7 +11,7 @@ Agente de IA para Claude Code que analisa futebol, ténis, NBA e basebol, sugere
 | `gestao-banca` | Stop-loss, stakes (1/4 Kelly, teto de 10%), registo, métricas |
 
 ## Uso
-- Plano do dia: `/plano-diario` (também corre sozinho todos os dias às 10:00 de Lisboa).
+- Plano do dia: `/plano-diario` (também corre sozinho todos os dias às 00:00 de Lisboa).
 - Comunicar resultados em linguagem natural, ex.: "24/09 #1 ganhei, apostei 0,70 €, lucro 0,77 €" (skill `/resultado`).
 - Métricas: `python3 scripts/banca.py metricas`.
 - Testes: `python3 -m unittest discover -s tests`.

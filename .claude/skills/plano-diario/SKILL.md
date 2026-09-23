@@ -7,6 +7,10 @@ description: Gera o plano diário de apostas (futebol, ténis, NBA, basebol) com
 
 Data: hoje, na hora de Lisboa, ou a data dada como argumento. Depois das 21:00 de Lisboa, faz o plano para o dia seguinte.
 
+- A Routine corre às 00:00 de Lisboa (23:00 no horário de inverno, que pela regra acima dá o plano do dia seguinte), para cobrir os jogos da madrugada (ex.: ténis na Ásia).
+- A essa hora ainda não há onzes nem relatórios de lesões para os jogos da tarde e da noite: nesses casos a confiança máxima é média, e o plano diz o que confirmar antes do jogo.
+- Se `planos/AAAA-MM-DD.md` já existir, não refaças tudo: verifica notícias e odds das apostas do plano (`noticias-lesoes` e `estatistica-dados`), atualiza ou cancela as que mudaram e acrescenta uma secção "Atualização HH:MM".
+
 1. **Banca:** `python3 scripts/banca.py estado`. Se aparecer `STOP-LOSS ATINGIDO`, escreve um plano "PAUSA" (banca, motivo, proposta de revisão) e salta para o passo 8.
 2. **Mapa do dia:** subagente `estatistica-dados`, que devolve os eventos das próximas 36 h por desporto e o estado das fontes (API e rede).
 3. **Análise:** em paralelo, um subagente por desporto com jogos: `analista-futebol`, `analista-tenis`, `analista-nba`, `analista-basebol`. Passa a cada um a data, a parte do mapa do seu desporto e as fontes disponíveis.
