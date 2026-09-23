@@ -1,6 +1,6 @@
 ---
 name: plano-diario
-description: Gera ou atualiza o plano diário de apostas (futebol, ténis, NBA/WNBA, basebol) pelo método "preço primeiro" — varredura de valor contra a Pinnacle, filtro dos subagentes, regras de risco e de banca, registo das recomendações e agendamento das verificações pré-jogo. Usar quando o utilizador pede o plano do dia ou quando as Routines diárias disparam (00:00, 12:00, 18:00).
+description: Gera ou atualiza o plano diário de apostas (futebol, ténis, NBA/WNBA, basebol) pelo método "preço primeiro" — varredura de valor contra a Pinnacle, filtro dos subagentes, regras de risco e de banca, registo das recomendações e agendamento das verificações pré-jogo. Usar quando o utilizador pede o plano do dia ou quando as Routines diárias disparam (01:30, 07:30, 13:30 e 19:30 de Lisboa).
 ---
 
 # Plano diário
@@ -9,9 +9,11 @@ description: Gera ou atualiza o plano diário de apostas (futebol, ténis, NBA/W
 
 **Modo:**
 - Se `planos/AAAA-MM-DD.md` ainda não existe: **plano completo**, com janela de 36 horas.
-- Se já existe (atualizações das 12:00 e das 18:00, ou novo pedido): **atualização**, com janela de 12 horas. Só entram candidatas novas, numa secção "Atualização HH:MM" no fim do plano. O resto não se refaz.
+- Se já existe (atualizações das 07:30, 13:30 e 19:30, ou novo pedido): **atualização**, com janela de 12 horas. Só entram candidatas novas, numa secção "Atualização HH:MM" no fim do plano. O resto não se refaz.
 
-Às 00:00 ainda não há onzes nem relatórios de lesões para os jogos da tarde e da noite. Nesses casos, a confiança máxima é média e é a verificação pré-jogo que decide.
+**Desportos:** só entram os ativos em `desportos` no `config.json` (ver "Foco atual" em `CLAUDE.md`). Os comandos `odds.py valor` e `alvos` já filtram por eles.
+
+À 01:30 ainda não há onzes nem relatórios de lesões para os jogos da tarde e da noite. Nesses casos, a confiança máxima é média e é a verificação pré-jogo que decide.
 
 1. **Estado:** `python3 scripts/banca.py estado`. Se aparecer `STOP-LOSS ATINGIDO` ou `REGRA DE PARAGEM ATIVA`, escreve um plano "PAUSA" (banca, motivo, proposta de revisão) e salta para o passo 8.
 2. **Fontes, manutenção e varredura:** o subagente `estatistica-dados` corre primeiro `odds.py fontes` e depois:
@@ -19,7 +21,7 @@ description: Gera ou atualiza o plano diário de apostas (futebol, ténis, NBA/W
    - **Sem ela:** `odds.py alvos`, com as fontes do GitHub. Os alvos entram no plano, na secção "Alvos para as tuas casas", depois de passarem pelos analistas e pelas notícias (passos 3 a 6). Dá prioridade aos marcados com ★ e aos do desporto de que o utilizador falou.
    - **Se o ténis ainda vier com a data de ontem** (a fonte atualiza pouco depois das 00:00 UTC): agenda com `send_later`, 90 minutos depois, "Alvos de ténis: corre odds.py alvos --desporto tenis e acrescenta-os ao plano de hoje".
    - **Sem nenhuma fonte:** o plano é "HOJE: NÃO APOSTAR" e explica que falta a fonte de odds; salta para o passo 8.
-3. **Filtro:** em paralelo, um analista por desporto com candidatas: `analista-futebol`, `analista-tenis`, `analista-nba`, `analista-basebol`. Cada um recebe só as candidatas do seu desporto: item, jogo, seleção, odd, casa, idade, preço justo, EV e movimento.
+3. **Filtro:** em paralelo, um analista por desporto ativo com candidatas: `analista-futebol`, `analista-tenis`, `analista-nba`, `analista-basebol`. Cada um recebe só as candidatas do seu desporto: item, jogo, seleção, odd, casa, idade, preço justo, EV e movimento.
 4. **Notícias:** `noticias-lesoes`, com as candidatas aprovadas pelos analistas.
 5. **Validação:** `estatistica-dados`, com as aprovadas e os veredictos das notícias. Confirma as contas e os ajustes.
 6. **Risco:** `gestao-risco` devolve as aprovadas e as rejeitadas.

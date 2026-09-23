@@ -43,6 +43,7 @@ FONTES = {
                "next_games/next_games.xlsx",
 }
 HORA_TENNISEXPLORER = ZoneInfo("Europe/Prague")  # a fonte de ténis dá as horas na hora da Europa Central
+DESPORTO = {"soccer": "futebol", "tennis": "tenis", "basketball": "basquetebol", "baseball": "basebol"}
 
 
 def pedir(caminho, **params):
@@ -122,7 +123,8 @@ def competicoes(cfg):
     """Chaves ativas da API que correspondem a config.json (um '*' no fim é prefixo)."""
     ativas = sorted(d["key"] for d in pedir("sports") if d["active"])
     return [k for padrao in cfg["competicoes"] for k in ativas
-            if k == padrao or (padrao.endswith("*") and k.startswith(padrao[:-1]))]
+            if (k == padrao or (padrao.endswith("*") and k.startswith(padrao[:-1])))
+            and banca.ativo(cfg, DESPORTO.get(k.split("_")[0], ""))]
 
 
 def baixar(url):
@@ -220,7 +222,7 @@ def cmd_alvos(args):
     b = banca.banca(cfg, banca.ler("apostas.csv"))
     itens = []
     for nome, funcao in (("tenis", alvos_tenis), ("futebol", alvos_futebol)):
-        if args.desporto and nome not in args.desporto:
+        if nome not in (args.desporto or [d for d in ("tenis", "futebol") if banca.ativo(cfg, d)]):
             continue
         try:
             novos, nota = funcao()
@@ -230,8 +232,11 @@ def cmd_alvos(args):
         itens += novos
         print(f"{nome}: {nota}")
     limite = agora + timedelta(hours=args.horas)
+    challengers = args.challengers or cfg.get("incluir_challengers", False)
+    ligas = cfg.get("futebol_ligas", [""])
     itens = [s for s in itens if agora < datetime.fromisoformat(s["inicio"]) <= limite
-             and (args.challengers or not re.search(r"challenger|itf", s["competicao"], re.I))]
+             and (challengers or not re.search(r"challenger|itf", s["competicao"], re.I))
+             and (s["desporto"] != "Futebol" or any(liga in s["competicao"] for liga in ligas))]
     for s in itens:
         s["minima"] = (1 + banca.ev_minimo(cfg, s["fonte"])) / s["justa"]
         s["stake"] = banca.calcular_stake(cfg, b, s["justa"], s["minima"] + 1e-9)[0]
@@ -424,8 +429,8 @@ def main():
     sub.add_parser("fontes")
     a = sub.add_parser("alvos")
     a.add_argument("--horas", type=int, default=36)
-    a.add_argument("--desporto", nargs="*", choices=["tenis", "futebol"])
-    a.add_argument("--challengers", action="store_true", help="incluir Challengers e ITF")
+    a.add_argument("--desporto", nargs="*", choices=["tenis", "futebol"], help="por omissão, os ativos em config.json")
+    a.add_argument("--challengers", action="store_true", help="incluir Challengers e ITF (ou incluir_challengers)")
     v = sub.add_parser("valor")
     v.add_argument("--horas", type=int, default=36)
     v.add_argument("--limiar", type=float, help="EV mínimo em %% (por omissão, o de config.json)")

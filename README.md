@@ -13,7 +13,7 @@ O orquestrador é o `CLAUDE.md`. Os subagentes estão em `.claude/agents/`:
 | `gestao-banca` | Regista recomendações e apostas; stakes a 1/4 Kelly com teto de 10%; métricas |
 
 ## Uso
-- **Plano:** `/plano-diario`. Corre sozinho às 00:00 de Lisboa, com atualizações às 12:00 e às 18:00.
+- **Plano:** `/plano-diario`. Corre sozinho à 01:30 de Lisboa, com atualizações às 07:30, 13:30 e 19:30. O foco atual é o ténis; o futebol volta a 09/10 (ligas europeias e Champions).
 - **Pré-jogo:** `/pre-jogo REF`. É agendado sozinho 40 minutos antes de cada recomendação, para guardar a odd de fecho e confirmar onzes e lesões.
 - **Apostas e resultados:** em linguagem natural (skill `/resultado`). Por exemplo: "apostei na 25/09 #1, 0,20 € a 2,15 na Betano" e depois "ganhou".
 - **Métricas:**

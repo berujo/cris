@@ -34,7 +34,6 @@
     "soccer_uefa_champs_league",
     "soccer_uefa_europa_league",
     "soccer_uefa_europa_conference_league",
-    "soccer_uefa_nations_league",
     "soccer_epl",
     "soccer_efl_champ",
     "soccer_spain_la_liga",
@@ -51,5 +50,28 @@
     "basketball_nba",
     "basketball_wnba",
     "baseball_mlb"
+  ],
+  "desportos": {
+    "tenis": "2026-01-01",
+    "futebol": "2026-10-09",
+    "basquetebol": null,
+    "basebol": null
+  },
+  "incluir_challengers": true,
+  "futebol_ligas": [
+    "POR",
+    "PRT",
+    "ENG",
+    "ESP",
+    "ITA",
+    "GER",
+    "DEU",
+    "FRA",
+    "NED",
+    "NLD",
+    "BEL",
+    "Champions League",
+    "Europa League",
+    "Conference League"
   ]
 }

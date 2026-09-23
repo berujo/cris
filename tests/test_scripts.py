@@ -142,7 +142,9 @@ class TestDiaCompleto(unittest.TestCase):
 
     def setUp(self):
         self.pasta = Path(tempfile.mkdtemp())
-        shutil.copy(RAIZ / "dados" / "config.json", self.pasta)
+        cfg = json.loads((RAIZ / "dados" / "config.json").read_text())
+        cfg["desportos"]["futebol"] = "2000-01-01"  # este teste é sobre o fluxo, não sobre o foco
+        (self.pasta / "config.json").write_text(json.dumps(cfg))
         self.dados_originais, banca.DADOS = banca.DADOS, self.pasta
         self.pedir_original = odds.pedir
         self.inicio = (datetime.now(timezone.utc) + timedelta(minutes=30)).strftime(odds.FMT)
@@ -279,7 +281,8 @@ class TestFontesGithub(unittest.TestCase):
         with contextlib.redirect_stdout(saida):
             odds.cmd_alvos(argparse.Namespace(horas=72, desporto=None, challengers=False))
         itens = json.loads((self.pasta / "alvos.json").read_text())["itens"]
-        self.assertFalse(any("challenger" in s["competicao"] for s in itens))
+        self.assertTrue(any("challenger" in s["competicao"] for s in itens))  # incluir_challengers
+        self.assertFalse(any(s["desporto"] == "Futebol" for s in itens))  # futebol só a partir de 09/10
         alvo = next(s for s in itens if s["selecao"] == "Griekspoor T.")
         self.assertAlmostEqual(alvo["minima"], 1.05 / alvo["justa"])  # sem Pinnacle, exige 5%
 
@@ -293,6 +296,23 @@ class TestFontesGithub(unittest.TestCase):
         r = banca.ler("recomendacoes.csv")[0]
         self.assertEqual((r["casa"], r["sport_key"], r["fonte_justa"]), ("Betano", "github", "consenso"))
         self.assertEqual(r["prob_final"], r["prob_justa"])  # sem ajuste por defeito
+
+    def test_futebol_so_ligas_europeias_quando_ativo(self):
+        cfg = json.loads((self.pasta / "config.json").read_text())
+        cfg["desportos"]["futebol"] = "2000-01-01"
+        (self.pasta / "config.json").write_text(json.dumps(cfg))
+        self.futebol = xlsx([["league_info", "fixture_name", "starting_at", "Pinnacle_Match_Odds_Away",
+                              "Pinnacle_Match_Odds_Draw", "Pinnacle_Match_Odds_Home"],
+                             ["La Liga 2 - ESP S", "Girona vs Albacete", self.tenis["last_updated"][:10] + " 18:30:00",
+                              1.52, 4.47, 5.70],
+                             ["Liga BetPlay - COL PA", "Nacional vs Millonarios",
+                              self.tenis["last_updated"][:10] + " 23:30:00", 1.81, 3.69, 4.13]])
+        with contextlib.redirect_stdout(io.StringIO()):
+            odds.cmd_alvos(argparse.Namespace(horas=72, desporto=None, challengers=False))
+        itens = json.loads((self.pasta / "alvos.json").read_text())["itens"]
+        futebol = [s for s in itens if s["desporto"] == "Futebol"]
+        self.assertTrue(futebol)
+        self.assertTrue(all("ESP" in s["competicao"] for s in futebol))
 
     def test_ler_xlsx(self):
         self.assertEqual(odds.ler_xlsx(xlsx([["a", "b"], ["x", 1.5]])), [{"a": "x", "b": "1.5"}])

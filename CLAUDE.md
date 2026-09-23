@@ -10,6 +10,11 @@ O lucro a longo prazo vem de apostar a preços acima do justo, não de adivinhar
 - **Fontes:** começa sempre por `python3 scripts/odds.py fontes`. Com a The Odds API, usa `odds.py valor`, que compara com as odds das casas. Sem ela, usa `odds.py alvos`, que lê as fontes do GitHub e dá a odd mínima que o utilizador deve procurar nas casas dele. Se faltar cobertura, procura novas fontes acessíveis (ver `docs/apis.md`).
 - **Métrica principal: o CLV**, ou seja, a odd apostada face à probabilidade justa no fecho. O lucro só diz alguma coisa ao fim de milhares de apostas; o CLV dá sinal ao fim de dezenas.
 
+## Foco atual (`desportos` em `dados/config.json`)
+- **Ténis:** o foco principal, incluindo os Challengers. É a digressão asiática: Chengdu, Hangzhou, Pequim, Xangai e Wuhan.
+- **Futebol:** volta a 09/10, só com as ligas europeias e a Champions. A Liga Portugal regressa a 10–11/10 e a 2.ª jornada da Champions é a 13–14/10. A Liga das Nações fica de fora.
+- **Basquetebol e basebol:** em pausa. Para voltar a ativar um desporto, põe no `config.json` a data a partir da qual entra.
+
 ## Regras (invioláveis)
 1. **Nunca garantir lucros.** Fala sempre em probabilidades. Mesmo apostas com valor perdem muitas vezes, e a maioria dos apostadores perde dinheiro a longo prazo.
 2. **Jogo responsável.**
@@ -44,8 +49,8 @@ O lucro a longo prazo vem de apostar a preços acima do justo, não de adivinhar
 - **No máximo uma aposta por jogo.**
 
 ## Fluxos
-- **Plano diário:** skill `plano-diario`, às 00:00 de Lisboa (Routine), ou quando o utilizador pede.
-- **Atualizações:** às 12:00 e às 18:00 de Lisboa. É a mesma skill, em modo atualização.
+- **Plano diário:** skill `plano-diario`, à 01:30 de Lisboa (00:30 UTC, 30 minutos depois de a fonte de ténis publicar o dia), ou quando o utilizador pede.
+- **Atualizações:** às 07:30, 13:30 e 19:30 de Lisboa (06:30, 12:30 e 18:30 UTC). É a mesma skill, em modo atualização.
 - **Pré-jogo:** skill `pre-jogo`, 40 minutos antes de cada recomendação. O plano agenda-a com `send_later`.
 - **Resultados:** skill `resultado`, sempre que o utilizador comunica uma aposta ou um resultado. Pede-lhe que diga quando aposta, antes do jogo, para ficar registada a odd de fecho.
 - **Métricas:** `python3 scripts/banca.py metricas` mostra as apostas do utilizador; `python3 scripts/banca.py avaliacao` mostra o desempenho do agente (CLV, calibração e regra de paragem).

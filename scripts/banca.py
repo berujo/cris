@@ -88,6 +88,12 @@ def limite_stop_loss(cfg):
     return cfg["banca_inicial"] * (1 - cfg["stop_loss_pct"] / 100)
 
 
+def ativo(cfg, desporto, dia=None):
+    """Se o desporto está no foco: 'desportos' em config.json dá a data a partir da qual entra (null = pausa)."""
+    inicio = cfg.get("desportos", {}).get(desporto, "2000-01-01")
+    return inicio is not None and (dia or hoje()) >= inicio
+
+
 def ev_minimo(cfg, fonte):
     return cfg["ev_minimo_pct" if fonte == "pinnacle" else "ev_minimo_consenso_pct"] / 100
 
