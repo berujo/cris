@@ -1,18 +1,34 @@
+import argparse
+import contextlib
+import io
+import json
+import shutil
 import sys
+import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+RAIZ = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(RAIZ / "scripts"))
 import banca  # noqa: E402
 import odds  # noqa: E402
 
 CFG = {"banca_inicial": 20.0, "fracao_kelly": 0.25, "teto_stake_pct": 10, "teto_multipla_pct": 5,
-       "stop_loss_pct": 50, "stake_minima": 0.10, "arredondamento": 0.10}
+       "stop_loss_pct": 50, "stake_minima": 0.10, "arredondamento": 0.10, "ev_minimo_pct": 3,
+       "ev_minimo_consenso_pct": 5, "odd_minima": 1.40, "odd_maxima": 4.00, "ajuste_max_pp": 3,
+       "clv_minimo_amostra": 3}
 
 
 def aposta(estado, stake, odd, lucro):
     return {"id": "1", "data": "2026-09-24", "estado": estado, "stake": str(stake), "odd": str(odd),
             "lucro": str(lucro)}
+
+
+def rec(**campos):
+    r = {c: "" for c in banca.REC}
+    r.update({"tipo": "simples", "fonte_justa": "pinnacle", **campos})
+    return r
 
 
 class TestBanca(unittest.TestCase):
@@ -43,21 +59,51 @@ class TestBanca(unittest.TestCase):
         self.assertAlmostEqual(yld, 0.25)
         self.assertAlmostEqual(acerto, 2 / 3)
 
+    def test_validar_aplica_as_regras(self):
+        ok = rec(odd="2.10", prob_justa="0.49", prob_final="0.50")  # EV +5%, ajuste +1 pp
+        self.assertEqual(banca.validar(CFG, 20, ok), (0.20, None))
+        casos = {"ajuste": rec(odd="2.10", prob_justa="0.45", prob_final="0.50"),
+                 "fora do intervalo": rec(odd="4.50", prob_justa="0.24", prob_final="0.25"),
+                 "abaixo do mínimo de 3": rec(odd="2.00", prob_justa="0.51", prob_final="0.51"),
+                 "abaixo do mínimo de 5": rec(odd="2.10", prob_justa="0.49", prob_final="0.49",
+                                             fonte_justa="consenso")}
+        for motivo, r in casos.items():
+            self.assertIn(motivo, banca.validar(CFG, 20, r)[1])
+
+    def test_regra_de_paragem(self):
+        maus = [rec(odd="2.0", prob_fecho="0.49") for _ in range(3)]
+        self.assertTrue(banca.regra_paragem(CFG, maus))
+        self.assertFalse(banca.regra_paragem(CFG, maus[:2]))  # amostra ainda curta
+        self.assertFalse(banca.regra_paragem(CFG, [rec(odd="2.0", prob_fecho="0.52") for _ in range(3)]))
+
 
 class TestOdds(unittest.TestCase):
-    def test_sem_margem(self):
-        self.assertEqual(odds.sem_margem([1.90, 1.90]), [0.5, 0.5])
+    def test_shin_igual_a_biblioteca_de_referencia(self):
+        # valores da biblioteca 'shin' (PyPI), calculados à parte
+        for cotacoes, esperado in (([2.6, 2.4, 4.3], [0.372994, 0.404779, 0.222227]),
+                                   ([1.22, 6.5, 13.0], [0.797081, 0.139194, 0.063725]),
+                                   ([1.25, 4.2], [0.780952, 0.219048])):
+            for p, e in zip(odds.shin(cotacoes), esperado):
+                self.assertAlmostEqual(p, e, places=5)
 
-    def test_valor_contra_pinnacle(self):
+    def test_shin_favorece_o_favorito(self):
+        cotacoes = [1.22, 6.5, 13.0]
+        proporcional = [(1 / o) / sum(1 / x for x in cotacoes) for o in cotacoes]
+        self.assertGreater(odds.shin(cotacoes)[0], proporcional[0])
+
+    def test_valor_contra_pinnacle_sem_exchanges(self):
+        agora = datetime(2026, 9, 25, 12, tzinfo=timezone.utc)
         evento = {"bookmakers": [
-            {"key": "pinnacle", "title": "Pinnacle", "markets": [{"key": "h2h", "outcomes": [
-                {"name": "A", "price": 1.95}, {"name": "B", "price": 1.95}]}]},
-            {"key": "betclic", "title": "Betclic", "markets": [{"key": "h2h", "outcomes": [
-                {"name": "A", "price": 2.10}, {"name": "B", "price": 1.75}]}]},
+            {"key": "pinnacle", "title": "Pinnacle", "last_update": "2026-09-25T11:58:00Z",
+             "markets": [{"key": "h2h", "outcomes": [{"name": "A", "price": 1.95}, {"name": "B", "price": 1.95}]}]},
+            {"key": "unibet_eu", "title": "Unibet", "last_update": "2026-09-25T11:50:00Z",
+             "markets": [{"key": "h2h", "outcomes": [{"name": "A", "price": 2.10}, {"name": "B", "price": 1.75}]}]},
+            {"key": "betfair_ex_eu", "title": "Betfair", "last_update": "2026-09-25T11:59:00Z",
+             "markets": [{"key": "h2h", "outcomes": [{"name": "A", "price": 2.30}, {"name": "B", "price": 1.80}]}]},
         ]}
-        valor = {s: (casa, v) for _, s, _, _, _, casa, v in odds.analisar(evento)}
-        self.assertEqual(valor["A"][0], "Betclic")
-        self.assertAlmostEqual(valor["A"][1], 0.05)
+        valor = {s["selecao"]: s for s in odds.analisar(evento, excluir=["betfair_ex_eu"], agora=agora)}
+        self.assertEqual((valor["A"]["casa"], valor["A"]["idade_min"], valor["A"]["fonte"]), ("Unibet", 10, "pinnacle"))
+        self.assertAlmostEqual(valor["A"]["valor"], 0.05)
 
     def test_totais_sem_pinnacle(self):
         evento = {"bookmakers": [
@@ -66,8 +112,102 @@ class TestOdds(unittest.TestCase):
             for k, o, u in (("x", 1.80, 2.00), ("y", 1.90, 1.90))
         ]}
         r = odds.analisar(evento)
-        self.assertEqual({s for _, s, *_ in r}, {"Over 2.5", "Under 2.5"})
-        self.assertTrue(all(fonte == "média de 2 casas" for _, _, _, fonte, *_ in r))
+        self.assertEqual({s["selecao"] for s in r}, {"Over 2.5", "Under 2.5"})
+        self.assertTrue(all(s["fonte"] == "média de 2 casas" and s["ponto"] == 2.5 for s in r))
+
+    def test_resultado_selecao(self):
+        jogo = {"home_team": "A", "away_team": "B", "scores": [{"name": "A", "score": "2"},
+                                                                {"name": "B", "score": "1"}]}
+        casos = [("h2h", "A", "", "ganha"), ("h2h", "Draw", "", "perdida"),
+                 ("totals", "Over 2.5", "2.5", "ganha"), ("totals", "Under 3", "3", "nula"),
+                 ("spreads", "B 1.5", "1.5", "ganha"), ("spreads", "A -1", "-1", "nula")]
+        for mercado, selecao, ponto, esperado in casos:
+            r = rec(mercado=mercado, selecao=selecao, ponto=ponto)
+            self.assertEqual(odds.resultado_selecao(r, jogo), esperado, selecao)
+
+
+def evento(inicio, pinnacle, unibet):
+    return {"id": "ev1", "sport_title": "EPL", "home_team": "A", "away_team": "B", "commence_time": inicio,
+            "bookmakers": [
+                {"key": "pinnacle", "title": "Pinnacle", "markets": [{"key": "h2h", "outcomes": [
+                    {"name": "A", "price": pinnacle[0]}, {"name": "Draw", "price": pinnacle[1]},
+                    {"name": "B", "price": pinnacle[2]}]}]},
+                {"key": "unibet_eu", "title": "Unibet", "markets": [{"key": "h2h", "outcomes": [
+                    {"name": "A", "price": unibet[0]}, {"name": "Draw", "price": unibet[1]},
+                    {"name": "B", "price": unibet[2]}]}]}]}
+
+
+class TestDiaCompleto(unittest.TestCase):
+    """Varredura → recomendação → aposta → fecho → resultado → avaliação, com uma API falsa."""
+
+    def setUp(self):
+        self.pasta = Path(tempfile.mkdtemp())
+        shutil.copy(RAIZ / "dados" / "config.json", self.pasta)
+        self.dados_originais, banca.DADOS = banca.DADOS, self.pasta
+        self.pedir_original = odds.pedir
+        self.inicio = (datetime.now(timezone.utc) + timedelta(minutes=30)).strftime(odds.FMT)
+        self.pinnacle = (2.00, 3.60, 3.90)
+
+        def pedir(caminho, **params):
+            if caminho == "sports":
+                return [{"key": "soccer_epl", "active": True, "group": "Soccer", "title": "EPL"},
+                        {"key": "tennis_atp_tokyo", "active": True, "group": "Tennis", "title": "ATP Tóquio"}]
+            if caminho.endswith("/events"):
+                return [{"id": "ev1"}] if "soccer_epl" in caminho else []
+            if caminho == "sports/soccer_epl/odds":
+                return [evento(self.inicio, self.pinnacle, (2.20, 3.40, 3.50))]
+            if caminho == "sports/soccer_epl/scores":
+                return [{"id": "ev1", "completed": True, "home_team": "A", "away_team": "B",
+                         "scores": [{"name": "A", "score": "1"}, {"name": "B", "score": "0"}]}]
+            raise AssertionError(f"pedido inesperado: {caminho}")
+
+        odds.pedir = pedir
+
+    def tearDown(self):
+        banca.DADOS, odds.pedir = self.dados_originais, self.pedir_original
+        shutil.rmtree(self.pasta)
+
+    def correr(self, funcao, *args):
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            funcao(*args)
+        return saida.getvalue()
+
+    def test_dia_completo(self):
+        saida = self.correr(odds.cmd_valor, argparse.Namespace(horas=36, limiar=None))
+        self.assertIn("1 com valor", saida)  # só A @ 2,20 na Unibet bate a Pinnacle por ≥ 3%
+        item = json.loads((self.pasta / "varredura.json").read_text())["itens"]
+        a = next(s for s in item if s["selecao"] == "A")
+
+        cfg, apostas = banca.carregar()
+        campos = {c: None for c in banca.REC}
+        campos.update(item=a["id"], prob_final=f"{a['justa']:.4f}", confianca="média")
+        ns = argparse.Namespace(**campos)
+        saida = self.correr(banca.cmd_recomendar, cfg, apostas, ns)
+        ref = saida.split(":")[0]
+        self.assertTrue(ref.endswith("#1"))
+
+        ns = argparse.Namespace(ref=ref, odd=2.20, stake=0.20, casa="Betano", estado="pendente", lucro=None,
+                                **{c: None for c in ("desporto", "competicao", "evento", "mercado", "selecao",
+                                                     "prob", "confianca", "data", "notas", "tipo")})
+        self.correr(banca.cmd_registar, cfg, apostas, ns)
+
+        self.pinnacle = (1.90, 3.70, 4.20)  # a linha mexeu a favor da aposta: CLV positivo
+        saida = self.correr(odds.cmd_fecho, argparse.Namespace(minutos=90, ref=None))
+        self.assertIn("CLV +", saida)
+        self.assertTrue(banca.ler("apostas.csv")[0]["prob_fecho"])
+
+        recs = banca.ler("recomendacoes.csv")
+        recs[0]["inicio"] = "2026-01-01T12:00:00Z"  # o jogo já acabou
+        banca.escrever("recomendacoes.csv", recs, banca.REC)
+        self.correr(odds.cmd_resultados, None)
+        self.assertEqual(banca.ler("recomendacoes.csv")[0]["resultado"], "ganha")
+
+        saida = self.correr(banca.cmd_avaliacao, banca.config(), [], None)
+        self.assertIn("CLV médio: +", saida)
+        self.assertIn("ROI em papel", saida)
+        saida = self.correr(banca.cmd_metricas, *banca.carregar(), None)
+        self.assertIn("CLV médio: +", saida)
 
 
 if __name__ == "__main__":
