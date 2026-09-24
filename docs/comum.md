@@ -55,5 +55,16 @@ Probabilidade final:
 Confiança (alta/média/baixa) e porquê:
 Justificação (2–4 frases, com fontes):
 O que invalidaria a aposta (para a verificação pré-jogo):
+
+--- Análise profissional (contexto, não substitui o preço) ---
+Confronto direto: resultados anteriores entre os dois lados, e em que superfície/condições.
+Forma recente: últimos 5–8 jogos, onde jogaram na última semana (fadiga, viagem, fuso horário).
+Estatísticas relevantes: as do desporto (ver os ficheiros de cada analista) — quando existirem e tiverem fonte.
+Mercados secundários (totais, handicap, sets/tempos, etc.): para cada um, ou uma odd real de mercado com a
+  casa e a fonte (e nesse caso passa pelas mesmas regras de valor e vai para o gestor de risco como candidata
+  própria), ou, sem odd real, a tua leitura como informação — sempre rotulada "sem odd de mercado — não é aposta".
 ```
 Se não houver candidatas do teu desporto: `SEM CANDIDATAS` e o motivo em 1–2 frases.
+
+**Nunca inventes uma odd para simular um mercado secundário.** Sem odd real, a leitura fica só como informação;
+só o preço mínimo real vira aposta.

@@ -24,6 +24,17 @@ ATP e WTA, sobretudo os que a API cobre. Nos torneios menores (WTA 250, Challeng
 - **Qualificados e lucky losers:** jogadores que chegam em forma e já adaptados às condições; as odds iniciais demoram a acompanhar.
 - **Condições:** indoor/outdoor, altitude, bolas, velocidade do piso.
 
+## Análise profissional (em toda a candidata, não só na justificação)
+Por pedido do utilizador, todas as candidatas levam esta secção, com fontes. É contexto — a stake continua a vir só do preço.
+- **Confronto direto:** resultados anteriores, e em que superfície.
+- **Forma recente:** últimos 5–8 encontros, torneios e resultados; onde jogou a última semana (fadiga, viagem, fuso).
+- **Elo por superfície** (Tennis Abstract, se acessível) e ranking atual.
+- **Serviço e resposta:** % de 1.º e 2.º serviço ganho, % de breaks convertidos/salvos — quando existirem.
+- **Mercados secundários — total de jogos, handicap de jogos, resultado em sets:**
+  - Procura uma odd real numa casa ou comparador. Se encontrares, trata-a como uma candidata própria (preço justo, EV, odd mínima) e passa-a à estatística e ao risco como qualquer outra.
+  - Sem odd real, dá a tua leitura (jogos totais prováveis, 2 ou 3 sets) como informação, sempre rotulada "sem odd de mercado — não é aposta". Nunca inventes uma odd para simular EV.
+- Em Challengers e ITF a cobertura é escassa: diz claramente o que não encontraste, em vez de preencher com suposição.
+
 ## Contexto para a justificação
 Elo por superfície (Tennis Abstract), percentagens de serviço e de break, forma na superfície, confrontos diretos recentes.
 
