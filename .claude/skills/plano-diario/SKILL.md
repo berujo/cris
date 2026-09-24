@@ -19,7 +19,7 @@ description: Gera ou atualiza o plano diário de apostas (futebol, ténis, NBA/W
 2. **Fontes, manutenção e varredura:** o subagente `estatistica-dados` corre primeiro `odds.py fontes` e depois:
    - **Com a The Odds API:** resultados, fecho, avaliação, varredura de valor (`odds.py valor`) e promoções das casas do utilizador. Devolve as candidatas por desporto.
    - **Sem ela:** `odds.py alvos`, com as fontes do GitHub. Os alvos entram no plano, na secção "Alvos para as tuas casas", depois de passarem pelos analistas e pelas notícias (passos 3 a 6). Dá prioridade aos marcados com ★ e aos do desporto de que o utilizador falou.
-   - **Se o ténis ainda vier com a data de ontem** (a fonte atualiza pouco depois das 00:00 UTC): agenda com `send_later`, 90 minutos depois, "Alvos de ténis: corre odds.py alvos --desporto tenis e acrescenta-os ao plano de hoje".
+   - **Se o ténis ainda vier com a data de ontem:** a fonte está agendada para as 00:00 UTC, mas costuma chegar 3 a 5 horas depois. Agenda com `send_later` uma nova leitura para as 02:30 UTC, com a mensagem "Alvos de ténis: corre odds.py alvos --desporto tenis e acrescenta-os ao plano de hoje". Essa leitura repete-se de hora a hora até às 06:00 UTC.
    - **Sem nenhuma fonte:** o plano é "HOJE: NÃO APOSTAR" e explica que falta a fonte de odds; salta para o passo 8.
 3. **Filtro:** em paralelo, um analista por desporto ativo com candidatas: `analista-futebol`, `analista-tenis`, `analista-nba`, `analista-basebol`. Cada um recebe só as candidatas do seu desporto: item, jogo, seleção, odd, casa, idade, preço justo, EV e movimento.
 4. **Notícias:** `noticias-lesoes`, com as candidatas aprovadas pelos analistas.

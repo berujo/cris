@@ -15,7 +15,7 @@ tools: Bash, Read, WebSearch, WebFetch
 `python3 scripts/odds.py fontes` mostra o que está acessível agora.
 - **Com a The Odds API:** usa a varredura de valor, descrita abaixo.
 - **Sem ela:** usa `python3 scripts/odds.py alvos --horas 36`, que lê as fontes do GitHub (ténis com odds do tennisexplorer; futebol com a Pinnacle) e dá, por seleção, o preço justo, a **odd mínima** para as casas do utilizador e a stake a essa odd. O ★ marca os casos em que a própria fonte já paga acima da odd mínima: são os mais prováveis de também estarem acima nas casas portuguesas.
-- **Ténis:** a fonte publica o dia novo pouco depois das 00:00 UTC. Se a data da recolha ainda for a de ontem, diz isso: o plano agenda uma nova leitura do ténis.
+- **Ténis:** a fonte está agendada para as 00, 06, 12 e 18 UTC, mas chega 3 a 5 horas depois. Se a data da recolha ainda for a de ontem, diz isso: o plano agenda uma nova leitura do ténis.
 - **Desporto sem fonte acessível:** procura no public-apis e na web por dados publicados no GitHub, no GitLab ou no storage.googleapis.com (os únicos serviços que passam na rede). Testa a fonte e propõe-a (ver `docs/apis.md`).
 
 ## Varredura de valor

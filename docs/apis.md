@@ -14,7 +14,7 @@ Estas fontes, publicadas por GitHub Actions, já estão ligadas ao `scripts/odds
 
 | Fonte | O que dá | Atualização | Estado (24/09/2026) |
 |---|---|---|---|
-| [Mriganka-codes/tennis_data](https://github.com/Mriganka-codes/tennis_data) | Encontros ATP, WTA e Challengers do dia, com odds do tennisexplorer (margem típica de média de casas) | De 6 em 6 h (00, 06, 12 e 18 UTC) | ✅ ligada |
+| [Mriganka-codes/tennis_data](https://github.com/Mriganka-codes/tennis_data) | Encontros ATP, WTA e Challengers do dia, com odds do tennisexplorer (margem típica de média de casas) | Agendada de 6 em 6 h (00, 06, 12 e 18 UTC), mas chega 3 a 5 h depois | ✅ ligada |
 | [aimidas1/pinnacle_bet365_odds_data](https://github.com/aimidas1/pinnacle_bet365_odds_data) | Próximos jogos de futebol com odds da **Pinnacle** e da Bet365 (1X2 e mais/menos golos). Os rótulos Home/Away do 1X2 estão trocados na fonte | Diária | ✅ ligada |
 | [jriordan55/mlb_pbp_model](https://github.com/jriordan55/mlb_pbp_model) | Odds da MLB (DraftKings, FanDuel, BetMGM) | Parou a 20/07/2026 | ❌ desatualizada |
 | [Tennismylife/TML-Database](https://github.com/Tennismylife/TML-Database) | Resultados ATP (sem odds) | Diária | contexto |
