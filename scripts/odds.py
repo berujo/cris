@@ -244,8 +244,9 @@ def cmd_alvos(args):
                    key=lambda s: (s["inicio"], s["evento"]))
     for i, s in enumerate(itens, 1):
         s["id"] = i
-    (banca.DADOS / "alvos.json").write_text(json.dumps({"hora": agora.strftime(FMT), "itens": itens},
-                                                       ensure_ascii=False, indent=1))
+    if itens:  # sem alvos, fica a última lista (a que o utilizador viu no plano)
+        (banca.DADOS / "alvos.json").write_text(json.dumps({"hora": agora.strftime(FMT), "itens": itens},
+                                                           ensure_ascii=False, indent=1))
     print(f"{len(itens)} alvos nas próximas {args.horas} h (★ = a própria fonte já paga acima da odd mínima).")
     for s in itens:
         hora = datetime.fromisoformat(s["inicio"]).astimezone(LISBOA)
