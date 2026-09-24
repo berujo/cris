@@ -314,5 +314,19 @@ class TestFontesGithub(unittest.TestCase):
         self.assertTrue(futebol)
         self.assertTrue(all("ESP" in s["competicao"] for s in futebol))
 
+    def test_numeros_estaveis_entre_leituras(self):
+        ns = argparse.Namespace(horas=72, desporto=["tenis"], challengers=True)
+        with contextlib.redirect_stdout(io.StringIO()):
+            odds.cmd_alvos(ns)
+        primeiro = {s["selecao"]: s["id"] for s in json.loads((self.pasta / "alvos.json").read_text())["itens"]}
+        self.tenis["matches"].insert(0, {"tournament": "Chengdu", "time": "11:00", "player1": "Novo A.",
+                                         "player2": "Novo B.", "odds1": 1.9, "odds2": 1.9, "tour": "ATP"})
+        with contextlib.redirect_stdout(io.StringIO()) as saida:
+            odds.cmd_alvos(ns)
+        segundo = {s["selecao"]: s["id"] for s in json.loads((self.pasta / "alvos.json").read_text())["itens"]}
+        self.assertTrue(all(segundo[k] == v for k, v in primeiro.items()))
+        self.assertEqual(segundo["Novo A."], max(primeiro.values()) + 1)
+        self.assertIn("2 novos", saida.getvalue())
+
     def test_ler_xlsx(self):
         self.assertEqual(odds.ler_xlsx(xlsx([["a", "b"], ["x", 1.5]])), [{"a": "x", "b": "1.5"}])

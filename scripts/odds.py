@@ -242,19 +242,31 @@ def cmd_alvos(args):
         s["stake"] = banca.calcular_stake(cfg, b, s["justa"], s["minima"] + 1e-9)[0]
     itens = sorted((s for s in itens if cfg["odd_minima"] <= s["minima"] <= cfg["odd_maxima"]),
                    key=lambda s: (s["inicio"], s["evento"]))
-    for i, s in enumerate(itens, 1):
-        s["id"] = i
-    if itens:  # sem alvos, fica a última lista (a que o utilizador viu no plano)
-        (banca.DADOS / "alvos.json").write_text(json.dumps({"hora": agora.strftime(FMT), "itens": itens},
-                                                           ensure_ascii=False, indent=1))
-    print(f"{len(itens)} alvos nas próximas {args.horas} h (★ = a própria fonte já paga acima da odd mínima).")
+    # Números estáveis: o mesmo alvo mantém o # que o utilizador viu no plano; os novos continuam a numeração.
+    ficheiro = banca.DADOS / "alvos.json"
+    antigos = json.loads(ficheiro.read_text())["itens"] if ficheiro.exists() else []
+    antigos = [s for s in antigos if datetime.fromisoformat(s["inicio"]) > agora - timedelta(hours=24)]
+    vistos = {(s["evento"], s["mercado"], s["selecao"], s["inicio"]): s["id"] for s in antigos}
+    proximo = max(vistos.values(), default=0) + 1
+    novos = 0
+    for s in itens:
+        chave = (s["evento"], s["mercado"], s["selecao"], s["inicio"])
+        s["novo"] = chave not in vistos
+        s["id"], proximo, novos = (vistos[chave], proximo, novos) if chave in vistos else (proximo, proximo + 1,
+                                                                                          novos + 1)
+    atuais = {s["id"] for s in itens}
+    guardar = sorted(itens + [s for s in antigos if s["id"] not in atuais], key=lambda s: s["id"])
+    if guardar and (novos or not ficheiro.exists()):  # sem alvos novos, a lista guardada não muda
+        ficheiro.write_text(json.dumps({"hora": agora.strftime(FMT), "itens": guardar}, ensure_ascii=False, indent=1))
+    print(f"{len(itens)} alvos nas próximas {args.horas} h, {novos} novos "
+          "(★ = a própria fonte já paga acima da odd mínima; 'novo' = não estava na leitura anterior).")
     for s in itens:
         hora = datetime.fromisoformat(s["inicio"]).astimezone(LISBOA)
         estrela = " ★" if s["odd_fonte"] and s["odd_fonte"] >= s["minima"] else ""
         fonte = f"{s['odd_fonte']:.2f} ({s['casa_fonte']})" if s["odd_fonte"] else "—"
         print(f"[{s['id']}] {hora:%d/%m %H:%M} {s['competicao']} · {s['evento']} · {s['mercado']} {s['selecao']} · "
               f"justa {1 / s['justa']:.2f} ({s['fonte']}) · odd mínima {s['minima']:.2f} · "
-              f"stake {banca.eur(s['stake'])} · fonte {fonte}{estrela}")
+              f"stake {banca.eur(s['stake'])} · fonte {fonte}{estrela}{' · novo' if s['novo'] else ''}")
 
 
 def cmd_fontes(_):
