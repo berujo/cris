@@ -330,3 +330,197 @@ class TestFontesGithub(unittest.TestCase):
 
     def test_ler_xlsx(self):
         self.assertEqual(odds.ler_xlsx(xlsx([["a", "b"], ["x", 1.5]])), [{"a": "x", "b": "1.5"}])
+
+
+import tenis  # noqa: E402
+
+CFG_NOVO = dict(CFG, consenso_alpha=0.02, recolha_velha_h=3, recolha_longe_h=12, recolha_extra_pct=2,
+                ev_extra_pct={r"\bitf\b": 3}, ev_extra_azarao_pct={"challenger": 1}, ev_suspeito_pct=15,
+                ev_secundarios_pct={"sets": 8, "sets_3": 10, "jogos": 6, "handicap": 6},
+                calibracao_ev={"k_prior": {"pinnacle": 0.7, "consenso": 0.5, "modelo": 0.5}, "n_prior": 50})
+
+
+class TestLimiaresEStakes(unittest.TestCase):
+    """Melhorias de 25/09/2026 — ver reports/Melhorias do agente de apostas.md."""
+
+    def test_limiar_contra_consenso(self):
+        c = CFG_NOVO
+        self.assertAlmostEqual(banca.ev_minimo(c, "consenso", 0.60), 0.05)  # piso de 5% nos favoritos
+        self.assertAlmostEqual(banca.ev_minimo(c, "consenso", 0.25), 0.02 / 0.23)  # Kaunitz nos azarões
+        self.assertAlmostEqual(banca.ev_minimo(c, "pinnacle", 0.25), 0.03)
+        self.assertAlmostEqual(banca.ev_minimo(c, "consenso", 0.60, idade_h=4), 0.07)  # recolha velha
+        self.assertAlmostEqual(banca.ev_minimo(c, "consenso", 0.60, antecedencia_h=13), 0.07)  # longe do início
+        self.assertAlmostEqual(banca.ev_minimo(c, "consenso", 0.45, "ATP Genoa challenger"), 0.06)
+        self.assertAlmostEqual(banca.ev_minimo(c, "consenso", 0.60, "ATP Genoa challenger"), 0.05)
+        self.assertAlmostEqual(banca.ev_minimo(c, "consenso", 0.60, "ITF M25 Porto"), 0.08)
+        self.assertAlmostEqual(banca.ev_minimo(c, "modelo", 0.4, mercado="sets", selecao="A 2-0"), 0.08)
+        self.assertAlmostEqual(banca.ev_minimo(c, "modelo", 0.2, mercado="sets", selecao="B 2-1"), 0.10)
+        self.assertAlmostEqual(banca.ev_minimo(c, "modelo", 0.5, mercado="jogos"), 0.06)
+        self.assertAlmostEqual(banca.ev_minimo(CFG, "consenso", 0.25), 0.05)  # sem as chaves novas: como antes
+
+    def test_stake_sobre_o_ev_calibrado(self):
+        self.assertEqual(banca.calibracao(CFG_NOVO, "consenso", []), (0.5, 0.0, 0))
+        self.assertEqual(banca.calibracao(CFG_NOVO, "pinnacle", [])[:2], (0.7, 0.0))
+        self.assertEqual(banca.calibracao(CFG, "consenso", []), (1.0, 0.0, 0))
+        # EV 10% a odd 2,00 com metade do EV: 1/4 de Kelly = 1,25% de 20 € = 0,25 € → 0,20 €
+        self.assertEqual(banca.calcular_stake(CFG_NOVO, 20, 0.55, 2.0, calib=(0.5, 0.0))[0], 0.20)
+        # O fecho confirma todo o EV: k sobe do prior (0,5) em direção a 1, com peso n/(n + 50)
+        recs = [rec(odd=f"{o:.2f}", prob_justa="0.5", prob_fecho="0.5", fonte_justa="consenso")
+                for o in (2.1, 2.2, 2.3, 2.4) * 25]
+        k, a, n = banca.calibracao(CFG_NOVO, "consenso", recs)
+        self.assertEqual(n, 100)
+        self.assertAlmostEqual(k, (100 / 150) * 1.0 + (50 / 150) * 0.5)
+        self.assertAlmostEqual(a, 0.0)
+
+    def test_filtros_de_armadilha_na_validacao(self):
+        c = dict(CFG_NOVO, teto_exposicao_pct=25)
+        base = {"prob_justa": "0.50", "prob_final": "0.50"}
+        suspeita = rec(odd="2.40", **base)  # EV +20%
+        self.assertIn("suspeito", banca.validar(c, 20, suspeita)[1])
+        self.assertIsNone(banca.validar(c, 20, suspeita, confirmado=True)[1])
+        so_uma = rec(odd="2.08", **base)  # EV +4%
+        self.assertIn("só esta casa", banca.validar(c, 20, so_uma, segunda_odd=2.00)[1])
+        self.assertIsNone(banca.validar(c, 20, so_uma, segunda_odd=2.07)[1])
+        subida = rec(odd="2.10", prob_justa="0.49", prob_final="0.50")
+        self.assertIn("ajuste positivo", banca.validar(c, 20, subida, ajuste_positivo=False)[1])
+        normal = rec(odd="2.20", **base)  # EV +10%: 0,40 € sem teto
+        self.assertEqual(banca.validar(c, 20, normal, exposicao=4.8), (0.20, None))
+        self.assertEqual(banca.validar(c, 20, normal, exposicao=5.0), (0.0, None))  # sem margem: stake 0
+
+    def test_freebet(self):
+        a = aposta("pendente", 1.0, 3.0, "")
+        a["tipo"] = "freebet"
+        banca.liquidar(a, "perdida", None)
+        self.assertEqual(a["lucro"], "0.00")
+        banca.liquidar(a, "ganha", None)
+        self.assertEqual(a["lucro"], "2.00")
+        self.assertEqual(banca.resumo([a])[1], 0.0)  # a stake da freebet não conta como dinheiro apostado
+
+    def test_preco_justo_conservador(self):
+        cotacoes = [1.67, 2.19]
+        potencia = odds.potencia(cotacoes)
+        self.assertAlmostEqual(sum(potencia), 1.0)
+        for c, s, p in zip(odds.justas_consenso(cotacoes), odds.shin(cotacoes), potencia):
+            self.assertEqual(c, min(s, p))
+
+
+class TestMercadosTenis(unittest.TestCase):
+    def test_modelo_de_pontos(self):
+        self.assertAlmostEqual(tenis.p_jogo(0.64), 0.8126, places=4)
+        iguais = tenis.mercados(tenis.distribuicao(0.5, 1.28, sigma=0))  # pA = pB = 0,64
+        self.assertAlmostEqual(iguais["media_jogos"], 25.683, places=2)
+        m = tenis.mercados(tenis.distribuicao(0.60, 1.22))
+        self.assertAlmostEqual(m["vence"], 0.60, places=3)
+        self.assertAlmostEqual(m["sets"]["2-0"], 0.369, places=2)
+        self.assertAlmostEqual(sum(m["sets"].values()), 1.0)
+        puro = tenis.mercados(tenis.distribuicao(0.60, 1.22, sigma=0))
+        self.assertLess(puro["sets"]["2-0"], m["sets"]["2-0"])  # o modelo puro subestima os 2-0
+        self.assertGreater(puro["media_jogos"], m["media_jogos"])  # e sobrestima os jogos
+        self.assertAlmostEqual(tenis.over(m, 0.5), 1.0)
+        self.assertAlmostEqual(tenis.cobre(m, 0.5) - tenis.cobre(m, -0.5), m["diferenca"].get(0, 0.0))
+
+    def test_nivel_por_circuito(self):
+        self.assertEqual(tenis.nivel(CFG, "WTA Seoul WTA")[1], "wta")
+        self.assertEqual(tenis.nivel(CFG, "ATP Genoa 2 challenger")[1], "challenger")
+        self.assertEqual(tenis.nivel(CFG, "ATP ITF M25")[1], "challenger")
+        self.assertEqual(tenis.nivel(CFG, "ATP Hangzhou"), (1.28, "atp"))
+
+
+class TestConsensoRecomendacoes(unittest.TestCase):
+    """Fecho pelo consenso (CLV sem Pinnacle), uma aposta por jogo, registos-sombra e avaliação."""
+
+    def setUp(self):
+        self.pasta = Path(tempfile.mkdtemp())
+        shutil.copy(RAIZ / "dados" / "config.json", self.pasta)
+        self.dados_originais, banca.DADOS = banca.DADOS, self.pasta
+        self.alvos_original = odds.alvos_tenis
+        agora = datetime.now(timezone.utc)
+        self.inicio = (agora + timedelta(hours=5)).strftime(odds.FMT)
+        self.recolha = agora.strftime(odds.FMT)
+        itens = [{"id": i, "desporto": "Ténis", "competicao": "ATP Hangzhou", "evento": "Faria J. vs Gaston H.",
+                  "inicio": self.inicio, "mercado": "h2h", "selecao": nome, "ponto": None, "justa": p,
+                  "fonte": "consenso", "recolha": self.recolha}
+                 for i, nome, p in ((1, "Faria J.", 0.645), (2, "Gaston H.", 0.355))]
+        (self.pasta / "alvos.json").write_text(json.dumps({"hora": self.recolha, "itens": itens}))
+
+    def tearDown(self):
+        banca.DADOS, odds.alvos_tenis = self.dados_originais, self.alvos_original
+        shutil.rmtree(self.pasta)
+
+    def recomendar(self, **campos):
+        ns = {c: None for c in banca.REC}
+        ns.update({"confianca": "média", "confirmado": False, "segunda_odd": None, "sombra": False})
+        ns.update(campos)
+        with contextlib.redirect_stdout(io.StringIO()) as saida:
+            banca.cmd_recomendar(banca.config(), [], argparse.Namespace(**ns))
+        return saida.getvalue()
+
+    def test_um_por_jogo_sombra_e_cobertura(self):
+        self.assertIn("abaixo da mínima", self.recomendar(alvo=2, odd=2.70, casa="Betano", sombra=True))
+        saida = self.recomendar(alvo=1, odd=1.75, casa="Betano")  # EV +12,9%, calibrado +6,5%
+        self.assertIn("stake 0,40 €", saida)
+        with self.assertRaises(SystemExit) as erro:
+            self.recomendar(alvo=2, odd=3.20, casa="Solverde")
+        self.assertIn("uma aposta por jogo", str(erro.exception))
+        recs = banca.ler("recomendacoes.csv")
+        self.assertEqual([r["tipo"] for r in recs], ["sombra", "simples"])
+        self.assertEqual(recs[1]["recolha"], self.recolha)
+        with contextlib.redirect_stdout(io.StringIO()) as saida:
+            banca.cmd_avaliacao(banca.config(), [], None)
+        self.assertIn("Betano 1/2", saida.getvalue())
+        self.assertIn("mais 1 registos-sombra", saida.getvalue())
+
+    def test_fecho_pelo_consenso(self):
+        agora = datetime(2026, 9, 25, 12, tzinfo=timezone.utc)
+        s = {"evento": "A vs B", "selecao": "A", "inicio": "2026-09-25T13:00:00Z", "justa": 0.60,
+             "recolha": "2026-09-25T03:50:00Z"}
+        self.assertEqual(odds.guardar_consenso([s], agora), {})
+        depois = dict(s, justa=0.63, recolha="2026-09-25T09:50:00Z")
+        self.assertEqual(odds.guardar_consenso([depois], agora), {odds.chave_consenso(s): 0.60})
+        hist = json.loads((self.pasta / "consenso.json").read_text())
+        r = rec(evento="A vs B", selecao="A", inicio=s["inicio"], recolha=s["recolha"], odd="1.80",
+                prob_justa="0.6000", sport_key="github")
+        p, t, antecedencia = odds.fecho_consenso(r, hist)
+        self.assertEqual((p, t), (0.63, depois["recolha"]))
+        self.assertAlmostEqual(antecedencia, 3 + 10 / 60)
+        self.assertIsNone(odds.fecho_consenso(dict(r, recolha=depois["recolha"]), hist))  # nunca a própria recolha
+        longe = dict(s, inicio="2026-09-25T17:00:00Z")  # a última recolha fica a mais de 6 h do início
+        odds.guardar_consenso([longe, dict(longe, recolha=depois["recolha"])], agora)
+        hist = json.loads((self.pasta / "consenso.json").read_text())
+        self.assertIsNone(odds.fecho_consenso(dict(r, inicio=longe["inicio"]), hist))
+
+        def sem_rede():
+            raise OSError("sem rede")
+        odds.alvos_tenis = sem_rede
+        banca.escrever("recomendacoes.csv", [r], banca.REC)
+        with contextlib.redirect_stdout(io.StringIO()) as saida:
+            odds.cmd_fecho(argparse.Namespace(minutos=90, ref=None))
+        self.assertIn("CLV +13,4%", saida.getvalue())  # 1,80 × 0,63 − 1
+        gravada = banca.ler("recomendacoes.csv")[0]
+        self.assertEqual((gravada["prob_fecho"], gravada["fecho_fonte"]), ("0.6300", "consenso"))
+        with contextlib.redirect_stdout(io.StringIO()) as saida:
+            banca.cmd_avaliacao(banca.config(), [], None)
+        self.assertIn("CLV médio (IC 95%)", saida.getvalue())
+        self.assertIn("mercado a favor depois da recomendação (M) +5,0%", saida.getvalue())
+
+
+class TestAlvosNovos(unittest.TestCase):
+    setUp, tearDown = TestFontesGithub.setUp, TestFontesGithub.tearDown
+
+    def test_itf_e_exibicoes_de_fora_alerta_e_odd_minima_tardia(self):
+        self.tenis["matches"] += [
+            {"tournament": "ITF M25 Porto", "time": "12:00", "player1": "C", "player2": "D", "odds1": 1.5,
+             "odds2": 2.5, "tour": "ATP"},
+            {"tournament": "Laver Cup", "time": "13:00", "player1": "E", "player2": "F", "odds1": 1.8,
+             "odds2": 1.95, "tour": "ATP"}]
+        ns = argparse.Namespace(horas=72, desporto=["tenis"], challengers=True, itf=False)
+        with contextlib.redirect_stdout(io.StringIO()):
+            odds.cmd_alvos(ns)
+        itens = json.loads((self.pasta / "alvos.json").read_text())["itens"]
+        self.assertFalse(any("ITF" in s["competicao"] or "Laver" in s["competicao"] for s in itens))
+        self.assertTrue(all(s["minima_tarde"] > s["minima"] for s in itens))  # a mínima sobe com a idade
+        self.tenis["last_updated"] = self.tenis["last_updated"][:11] + "01:05:00"  # nova recolha, mesmo dia
+        self.tenis["matches"][0].update(odds1=1.95, odds2=1.88)  # Griekspoor (azarão) sobe ~6 pp
+        with contextlib.redirect_stdout(io.StringIO()) as saida:
+            odds.cmd_alvos(ns)
+        self.assertIn("⚠ mov. para o azarão", saida.getvalue())

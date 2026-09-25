@@ -12,6 +12,40 @@
   "multipla_max_pernas": 3,
   "ajuste_max_pp": 3,
   "ev_minimo_consenso_pct": 5,
+  "consenso_alpha": 0.02,
+  "recolha_velha_h": 3,
+  "recolha_longe_h": 12,
+  "recolha_extra_pct": 2,
+  "ev_extra_pct": {
+    "\\bitf\\b": 3
+  },
+  "ev_extra_azarao_pct": {
+    "challenger": 1
+  },
+  "ev_suspeito_pct": 15,
+  "alerta_mov_azarao_pp": 5,
+  "ev_secundarios_pct": {
+    "sets": 8,
+    "sets_3": 10,
+    "jogos": 6,
+    "handicap": 6
+  },
+  "tenis_nivel_servico": {
+    "atp": 1.28,
+    "challenger": 1.22,
+    "wta": 1.14
+  },
+  "tenis_sigma": 0.065,
+  "calibracao_ev": {
+    "k_prior": {
+      "pinnacle": 0.7,
+      "consenso": 0.5,
+      "modelo": 0.5
+    },
+    "n_prior": 50
+  },
+  "ajuste_positivo": false,
+  "teto_exposicao_pct": null,
   "clv_minimo_amostra": 100,
   "casas": [
     "Betclic",
@@ -58,6 +92,11 @@
     "basebol": null
   },
   "incluir_challengers": true,
+  "incluir_itf": false,
+  "competicoes_excluidas": [
+    "Laver Cup",
+    "exhibition"
+  ],
   "futebol_ligas": [
     "POR",
     "PRT",
