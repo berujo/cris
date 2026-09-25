@@ -245,8 +245,8 @@ def mercados(d):
             "push_total": lambda l: tot.get(l, 0.0),
             "cobre": lambda l: sum(v for k, v in hcp.items() if k + l > 0),   # A com handicap l (ex.: -3.5)
             "a_ganha_set": sum(v for (sa, sb, _, _), v in d.items() if sa >= 1),
-            "b_ganha_set": sum(v for (sa, sb, _, _), v in d.items() if sb >= 1),
-            "p_tiebreak": None}  # para P(ha TB) somar os caminhos com set 7-6/6-7 (acrescentar a chave se preciso)
+            "b_ganha_set": sum(v for (sa, sb, _, _), v in d.items() if sb >= 1)}
+    # P(ha tie-break) exige guardar no estado se algum set acabou 7-6/6-7 (extensao trivial de dist_encontro)
 
 def odd_justa(p_ganha, p_push=0.0):      # linha inteira com devolucao
     return (1 - p_push) / p_ganha
