@@ -578,7 +578,8 @@ def cmd_fecho(args):
             r["fecho_fonte"] = "pinnacle" if s["fonte"] == "pinnacle" else "média das casas"
             print(f"{r['ref']}: fecho {1 / s['justa']:.2f} ({s['fonte']}) · odd {r['odd']} · "
                   f"CLV {banca.pct(banca.clv(r['odd'], s['justa']), True)}")
-    fechos.update(fecho_github(recs, args, agora))
+    github = fecho_github(recs, args, agora)
+    fechos.update(github or {})
     if fechos:
         banca.escrever("recomendacoes.csv", recs, banca.REC)
         _, apostas = banca.carregar()
@@ -586,19 +587,20 @@ def cmd_fecho(args):
             if a.get("ref") in fechos and not a.get("prob_fecho"):
                 a["prob_fecho"] = fechos[a["ref"]]
         banca.gravar(apostas)
-    elif not alvo:
+    elif not alvo and github is None:
         print("Nenhuma recomendação a começar dentro da janela.")
 
 
 def fecho_github(recs, args, agora):
     """Fecho das recomendações do GitHub (sem Pinnacle): a última recolha do consenso antes do início.
 
-    Só fica gravado depois de o jogo começar, para não perder uma recolha que ainda chegue antes do início."""
+    Só fica gravado depois de o jogo começar, para não perder uma recolha que ainda chegue antes do início.
+    Devolve None se não houver recomendações do GitHub por fechar."""
     alvo = [r for r in recs if r.get("sport_key") == "github" and not r["prob_fecho"]
             and r.get("fecho_fonte") != "não medido" and r.get("tipo") != "sombra"
             and (r["ref"] in args.ref if args.ref else minutos(r["inicio"], agora) <= args.minutos)]
     if not alvo:
-        return {}
+        return None
     try:
         itens, _ = alvos_tenis()
         guardar_consenso(itens, agora)
@@ -610,10 +612,13 @@ def fecho_github(recs, args, agora):
     for r in alvo:
         f = fecho_consenso(r, hist)
         if not f:
-            print(f"{r['ref']}: sem recolha do consenso posterior à recomendação e a menos de 6 h do início")
             if minutos(r["inicio"], agora) <= 0:  # já começou: não aparece outra recolha antes do início
+                print(f"{r['ref']}: fecho não medido (sem recolha do consenso posterior à recomendação e a menos "
+                      "de 6 h do início)")
                 r["fecho_fonte"] = "não medido"
                 fechos[r["ref"]] = ""
+            else:
+                print(f"{r['ref']}: ainda sem recolha do consenso posterior à recomendação")
             continue
         p, t, antecedencia = f
         mov = (p - float(r["prob_justa"])) * 100
