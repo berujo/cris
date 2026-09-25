@@ -63,6 +63,7 @@ O lucro a longo prazo vem de apostar a preços acima do justo, não de adivinhar
 - **Resultados:** skill `resultado`, sempre que o utilizador comunica uma aposta ou um resultado. Pede-lhe que diga quando aposta, antes do jogo, para ficar registada a odd de fecho. Pede-lhe também a odd que viu nas outras casas (`--segunda-odd`) e regista as odds vistas abaixo da mínima como sombra (`--sombra`): é o que mostra se as quatro casas chegam para este método.
 - **Manutenção** (em cada plano e atualização): `odds.py resultados` e `odds.py fecho`. O fecho do consenso só fica gravado depois do início do jogo.
 - **Métricas:** `python3 scripts/banca.py metricas` mostra as apostas do utilizador; `python3 scripts/banca.py avaliacao` mostra o desempenho do agente (CLV, calibração e regra de paragem).
+- **Memória:** `docs/memoria.md` (decisões do utilizador, lições, histórico) e o grafo do graphify em `graphify-out/` (`GRAPH_REPORT.md`, `graph.html`, `graph.json`). Para perguntas sobre o projeto, consulta o grafo primeiro: `graphify query "<pergunta>"`. Numa sessão nova: `pip install graphifyy && graphify install --platform claude`; depois de mudar docs ou código, `/graphify . --update` (a cache em `graphify-out/cache/` evita repetir a extração).
 - **Ficheiros de dados:**
   - `dados/apostas.csv`: só as apostas que o utilizador diz ter feito.
   - `dados/recomendacoes.csv`: todas as recomendações.

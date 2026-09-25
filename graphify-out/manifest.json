@@ -1,0 +1,218 @@
+{
+  "dados/config.json": {
+    "mtime": 1790356225.64372,
+    "seen": 1790357577.2195256,
+    "ast_hash": "ede817fdce1004991fddcfecc8df85cd",
+    "semantic_hash": "ede817fdce1004991fddcfecc8df85cd"
+  },
+  "scripts/backtest.py": {
+    "mtime": 1790205028.7259216,
+    "seen": 1790357577.2195463,
+    "ast_hash": "9447e412ddf3ffda6f51fe11cc61ba90",
+    "semantic_hash": "9447e412ddf3ffda6f51fe11cc61ba90"
+  },
+  "scripts/banca.py": {
+    "mtime": 1790356395.72373,
+    "seen": 1790357577.219548,
+    "ast_hash": "b2ea2787c0d3c4e7d71b21f1e32c9a28",
+    "semantic_hash": "b2ea2787c0d3c4e7d71b21f1e32c9a28"
+  },
+  "scripts/odds.py": {
+    "mtime": 1790356753.5837514,
+    "seen": 1790357577.2195494,
+    "ast_hash": "dbc382eedd4058ed5d74a81a7623cb69",
+    "semantic_hash": "dbc382eedd4058ed5d74a81a7623cb69"
+  },
+  "scripts/tenis.py": {
+    "mtime": 1790335563.3885043,
+    "seen": 1790357577.2195506,
+    "ast_hash": "66df8cad58e48b88eaa60fcf1592978a",
+    "semantic_hash": "66df8cad58e48b88eaa60fcf1592978a"
+  },
+  "tests/test_backtest.py": {
+    "mtime": 1790205037.859049,
+    "seen": 1790357577.219552,
+    "ast_hash": "ec8f5f82ccf13c498748f224546fdeeb",
+    "semantic_hash": "ec8f5f82ccf13c498748f224546fdeeb"
+  },
+  "tests/test_scripts.py": {
+    "mtime": 1790356708.7917488,
+    "seen": 1790357577.2195532,
+    "ast_hash": "ad9673de60b2c1fcc20efaada59a6bd8",
+    "semantic_hash": "ad9673de60b2c1fcc20efaada59a6bd8"
+  },
+  ".claude/agents/analista-basebol.md": {
+    "mtime": 1790204742.0230558,
+    "seen": 1790357577.219563,
+    "ast_hash": "44cbd0b7182f835003097ad3310ecd7d",
+    "semantic_hash": "44cbd0b7182f835003097ad3310ecd7d"
+  },
+  ".claude/agents/analista-futebol.md": {
+    "mtime": 1790204725.591056,
+    "seen": 1790357577.2195652,
+    "ast_hash": "e4d6d106e6a136ce6a4da402fe8cbd26",
+    "semantic_hash": "e4d6d106e6a136ce6a4da402fe8cbd26"
+  },
+  ".claude/agents/analista-nba.md": {
+    "mtime": 1790204737.071056,
+    "seen": 1790357577.2195663,
+    "ast_hash": "a216b4c9ef3e38ede5c959fd6abb0f04",
+    "semantic_hash": "a216b4c9ef3e38ede5c959fd6abb0f04"
+  },
+  ".claude/agents/analista-tenis.md": {
+    "mtime": 1790356535.8637383,
+    "seen": 1790357577.219567,
+    "ast_hash": "f68854d9c99c1c60b037d49919ea8bb3",
+    "semantic_hash": "f68854d9c99c1c60b037d49919ea8bb3"
+  },
+  ".claude/agents/estatistica-dados.md": {
+    "mtime": 1790356579.935741,
+    "seen": 1790357577.219568,
+    "ast_hash": "91ea6b14905c24a37b7f50043950d90f",
+    "semantic_hash": "91ea6b14905c24a37b7f50043950d90f"
+  },
+  ".claude/agents/gestao-banca.md": {
+    "mtime": 1790356586.3517413,
+    "seen": 1790357577.219569,
+    "ast_hash": "efd30e8aefab11a1c6f622f2077a31af",
+    "semantic_hash": "efd30e8aefab11a1c6f622f2077a31af"
+  },
+  ".claude/agents/gestao-risco.md": {
+    "mtime": 1790356579.843741,
+    "seen": 1790357577.2195697,
+    "ast_hash": "52be43feb65cae8294adc9bcb76cd371",
+    "semantic_hash": "52be43feb65cae8294adc9bcb76cd371"
+  },
+  ".claude/agents/noticias-lesoes.md": {
+    "mtime": 1790356579.787741,
+    "seen": 1790357577.2195704,
+    "ast_hash": "c9939d81fa6bd778e85bf145fcf45114",
+    "semantic_hash": "c9939d81fa6bd778e85bf145fcf45114"
+  },
+  ".claude/skills/plano-diario/SKILL.md": {
+    "mtime": 1790356609.9997427,
+    "seen": 1790357577.219571,
+    "ast_hash": "01cc23ac648db59e4296734eede671b2",
+    "semantic_hash": "01cc23ac648db59e4296734eede671b2"
+  },
+  ".claude/skills/pre-jogo/SKILL.md": {
+    "mtime": 1790356610.0237427,
+    "seen": 1790357577.219572,
+    "ast_hash": "6c476920a9e0645d295e122e20f0a818",
+    "semantic_hash": "6c476920a9e0645d295e122e20f0a818"
+  },
+  ".claude/skills/resultado/SKILL.md": {
+    "mtime": 1790356610.0757427,
+    "seen": 1790357577.2195728,
+    "ast_hash": "8b7f8379223ea52961d446cb7c3084c9",
+    "semantic_hash": "8b7f8379223ea52961d446cb7c3084c9"
+  },
+  "CLAUDE.md": {
+    "mtime": 1790356476.3757348,
+    "seen": 1790357577.2195735,
+    "ast_hash": "1ea57f96f30932ceffa3bc4d5285f802",
+    "semantic_hash": "1ea57f96f30932ceffa3bc4d5285f802"
+  },
+  "README.md": {
+    "mtime": 1790206082.698682,
+    "seen": 1790357577.2195742,
+    "ast_hash": "0d0ab0a2e79b734567d2104e01499a2b",
+    "semantic_hash": "0d0ab0a2e79b734567d2104e01499a2b"
+  },
+  "docs/apis.md": {
+    "mtime": 1790356626.1757438,
+    "seen": 1790357577.219575,
+    "ast_hash": "a6dda534a4a8ea05e41c929da9b339a0",
+    "semantic_hash": "a6dda534a4a8ea05e41c929da9b339a0"
+  },
+  "docs/backtest.md": {
+    "mtime": 1790205095.5278404,
+    "seen": 1790357577.2195761,
+    "ast_hash": "2a8318f22bc2dbf7f123187e4d724bfa",
+    "semantic_hash": "2a8318f22bc2dbf7f123187e4d724bfa"
+  },
+  "docs/comum.md": {
+    "mtime": 1790356511.4597368,
+    "seen": 1790357577.2195787,
+    "ast_hash": "484cafa0933fdece5214bdb561cd1cb9",
+    "semantic_hash": "484cafa0933fdece5214bdb561cd1cb9"
+  },
+  "docs/memoria.md": {
+    "mtime": 1790356930.7557619,
+    "seen": 1790357577.2195795,
+    "ast_hash": "b12db12b7f2a23e76ceac962c7c8c683",
+    "semantic_hash": "b12db12b7f2a23e76ceac962c7c8c683"
+  },
+  "docs/plano-melhorias.md": {
+    "mtime": 1790356635.8237443,
+    "seen": 1790357577.2195802,
+    "ast_hash": "4ff873244f703c488008952e016e28e9",
+    "semantic_hash": "4ff873244f703c488008952e016e28e9"
+  },
+  "planos/2026-09-24.md": {
+    "mtime": 1790279578.1241925,
+    "seen": 1790357577.219581,
+    "ast_hash": "72660a15000cc1b2cd5d37c31d873cb3",
+    "semantic_hash": "72660a15000cc1b2cd5d37c31d873cb3"
+  },
+  "planos/2026-09-25.md": {
+    "mtime": 1790312625.9546957,
+    "seen": 1790357577.2195816,
+    "ast_hash": "87a00797ae011491959b274a12f0f31a",
+    "semantic_hash": "87a00797ae011491959b274a12f0f31a"
+  },
+  "reports/Melhorias do agente de apostas.md": {
+    "mtime": 1790335789.8405178,
+    "seen": 1790357577.2195828,
+    "ast_hash": "fab2d74a2691506610aebc1ca83b5dea",
+    "semantic_hash": "fab2d74a2691506610aebc1ca83b5dea"
+  },
+  "requirements-backtest.txt": {
+    "mtime": 1790205028.7053087,
+    "seen": 1790357577.2195835,
+    "ast_hash": "5b04c53b611a6cc943971b21c131cd04",
+    "semantic_hash": "5b04c53b611a6cc943971b21c131cd04"
+  },
+  "research_notes/Melhorias do agente de apostas/fontes_dados.md": {
+    "mtime": 1790335166.9884806,
+    "seen": 1790357577.219584,
+    "ast_hash": "ee15ce8ce35791c49d785dfab9e8f151",
+    "semantic_hash": "ee15ce8ce35791c49d785dfab9e8f151"
+  },
+  "research_notes/Melhorias do agente de apostas/mercados_secundarios.md": {
+    "mtime": 1790334924.7484663,
+    "seen": 1790357577.2195847,
+    "ast_hash": "38ae5e36d5ff265639a31c7d6ca24d21",
+    "semantic_hash": "38ae5e36d5ff265639a31c7d6ca24d21"
+  },
+  "research_notes/Melhorias do agente de apostas/preco_justo_clv.md": {
+    "mtime": 1790334869.728463,
+    "seen": 1790357577.2195854,
+    "ast_hash": "89c22510de31bc24c39fa658d8540774",
+    "semantic_hash": "89c22510de31bc24c39fa658d8540774"
+  },
+  "research_notes/Melhorias do agente de apostas/regras_desistencia.md": {
+    "mtime": 1790334617.836448,
+    "seen": 1790357577.2195864,
+    "ast_hash": "fc23115257b1eb295c8135ea7dfc44b3",
+    "semantic_hash": "fc23115257b1eb295c8135ea7dfc44b3"
+  },
+  "research_notes/Melhorias do agente de apostas/ineficiencias_tenis.md": {
+    "mtime": 1790334538.9404433,
+    "seen": 1790357577.219587,
+    "ast_hash": "c52add44848b021543dcc8879ed12e5a",
+    "semantic_hash": "c52add44848b021543dcc8879ed12e5a"
+  },
+  "research_notes/Melhorias do agente de apostas/kelly_selecao_adversa.md": {
+    "mtime": 1790334870.868463,
+    "seen": 1790357577.2195878,
+    "ast_hash": "b30dcf276d4c5c239e9c235a77b5c15b",
+    "semantic_hash": "b30dcf276d4c5c239e9c235a77b5c15b"
+  },
+  "research_notes/Melhorias do agente de apostas/llm_e_praticas.md": {
+    "mtime": 1790334693.0964525,
+    "seen": 1790357577.2195885,
+    "ast_hash": "3329d1169f551bf4bab73d94c4da574e",
+    "semantic_hash": "3329d1169f551bf4bab73d94c4da574e"
+  }
+}
