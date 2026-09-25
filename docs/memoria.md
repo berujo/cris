@@ -17,6 +17,11 @@ porquê e a história.
 - **25/09:** "hoje só quero arriscar 5 €" — limite desse dia. Perguntou pelo Faria a ganhar 2-0. Pediu a pesquisa de melhorias e depois esta memória no graphify.
 - **Por decidir:** ligar o teto de exposição de 25% da banca (= 5 € em 20 €; `teto_exposicao_pct`); a faixa de odds para usar freebets.
 
+## Ferramentas pedidas pelo utilizador
+O contentor da sessão é descartado; numa sessão nova, reinstalar:
+- **graphify** (memória em grafo): `pip install graphifyy && graphify install --platform claude`.
+- **caveman** (respostas curtas), a 25/09: `claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman`. Os outros pedidos da altura (ponytail, headroom, token-optimizer) ficaram por instalar.
+
 ## Arquitetura
 - Orquestrador (`CLAUDE.md`) com 8 subagentes em `.claude/agents/` (4 analistas por desporto, notícias, estatística, risco e banca) e 3 skills (`plano-diario`, `pre-jogo`, `resultado`).
 - Código só com biblioteca padrão: `scripts/odds.py` (preço justo, varredura, alvos do GitHub, fecho, resultados, mercados do ténis, EV de promoções), `scripts/banca.py` (stakes, validação, registos, métricas, avaliação), `scripts/tenis.py` (modelo de pontos), `scripts/backtest.py`.
