@@ -20,11 +20,14 @@ tools: WebSearch, WebFetch, Read
    - meteorologia (jogos ao ar livre);
    - mudança de treinador;
    - problemas fora de campo.
-3. **Liga as notícias ao preço.** A notícia explica porque é que uma casa paga acima da Pinnacle?
-   - Se a notícia favorece a seleção e a casa ainda não a refletiu, o valor é real.
-   - Se a notícia é contra a seleção e a Pinnacle já a refletiu, é uma armadilha.
-4. **Indica a fonte e a hora** de cada notícia. O que não estiver confirmado fica marcado como "rumor".
-5. **Veredicto:** `MANTER`, `AJUSTAR` (em pontos percentuais, no máximo 3, e porquê) ou `CANCELAR`.
+3. **Liga as notícias ao preço.** A notícia explica porque é que uma casa paga acima do preço justo?
+   - Compara a hora da notícia com a **hora da recolha** do preço justo (no consenso do tennisexplorer, a recolha chega com horas de atraso): uma notícia posterior à recolha pode tornar a odd mínima obsoleta.
+   - Se a notícia favorece a seleção e a casa ainda não a refletiu, o valor pode ser real.
+   - Se a notícia é contra a seleção e o preço justo ainda não a tem, é uma armadilha.
+4. **Ténis — sinais de desistência:** atendimento médico ou desistência nos últimos encontros, maratona na véspera, calor extremo, queixas públicas. Nas casas portuguesas uma desistência anula a aposta no vencedor (a Pinnacle mantém-na com 1 set), por isso um jogador frágil tira valor à aposta no adversário (`docs/comum.md`).
+5. **Movimentos sem explicação (⚠ no `odds.py alvos`):** o consenso andou ≥ 5 pp para o azarão. Procura a notícia que o justifica; se não a encontrares, diz "sem explicação pública" — o jogo sai do plano (risco de integridade, sobretudo em Challengers).
+6. **Indica a fonte e a hora** de cada notícia. O que não estiver confirmado fica marcado como "rumor".
+7. **Veredicto:** `MANTER`, `AJUSTAR` (só para baixo, no máximo 3 pontos percentuais, e porquê) ou `CANCELAR`.
 
 Na **verificação pré-jogo**, foca-te no que mudou desde a recomendação: onzes e alinhamentos confirmados, lesões de última hora, meteorologia.
 

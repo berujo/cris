@@ -17,8 +17,13 @@ description: Gera ou atualiza o plano diário de apostas (futebol, ténis, NBA/W
 
 1. **Estado:** `python3 scripts/banca.py estado`. Se aparecer `STOP-LOSS ATINGIDO` ou `REGRA DE PARAGEM ATIVA`, escreve um plano "PAUSA" (banca, motivo, proposta de revisão) e salta para o passo 8.
 2. **Fontes, manutenção e varredura:** o subagente `estatistica-dados` corre primeiro `odds.py fontes` e depois:
-   - **Com a The Odds API:** resultados, fecho, avaliação, varredura de valor (`odds.py valor`) e promoções das casas do utilizador. Devolve as candidatas por desporto.
-   - **Sem ela:** `odds.py alvos`, com as fontes do GitHub. Os alvos entram no plano, na secção "Alvos para as tuas casas", depois de passarem pelos analistas e pelas notícias (passos 3 a 6). Dá prioridade aos marcados com ★ e aos do desporto de que o utilizador falou.
+   - **Manutenção, sempre:** `odds.py resultados`, `odds.py fecho` (grava o fecho do consenso dos jogos que já começaram) e `banca.py avaliacao`.
+   - **Com a The Odds API:** varredura de valor (`odds.py valor`) e promoções das casas do utilizador. Devolve as candidatas por desporto.
+   - **Sem ela:** `odds.py alvos`, com as fontes do GitHub. Os alvos entram no plano, na secção "Alvos para as tuas casas", depois de passarem pelos analistas e pelas notícias (passos 3 a 6).
+     - Um lado por jogo. Dá prioridade aos torneios principais e ao desporto de que o utilizador falou; os jogos com ⚠ (movimento para o azarão) só entram com notícia que o explique.
+     - Mostra a odd mínima como o `alvos` a dá, incluindo a que vale depois de a recolha ficar velha ("≥ 1,83 (1,87 depois das 20:44)").
+     - Alvos com "stake 0 (0,10 € a partir de X)": diz ao utilizador a odd X a partir da qual vale a pena; abaixo dela é só registo.
+     - Jogos que começam antes de o plano chegar ao utilizador (menos de ~45 min) não entram na lista acionável.
    - **Se o ténis ainda vier com a data de ontem:** a fonte está agendada para as 00:00 UTC, mas costuma chegar 3 a 5 horas depois. Agenda com `send_later` uma nova leitura para as 02:30 UTC, com a mensagem "Alvos de ténis: corre odds.py alvos --desporto tenis e acrescenta-os ao plano de hoje". Essa leitura repete-se de hora a hora até às 06:00 UTC.
    - **Sem nenhuma fonte:** o plano é "HOJE: NÃO APOSTAR" e explica que falta a fonte de odds; salta para o passo 8.
 3. **Filtro:** em paralelo, um analista por desporto ativo com candidatas: `analista-futebol`, `analista-tenis`, `analista-nba`, `analista-basebol`. Cada um recebe só as candidatas do seu desporto: item, jogo, seleção, odd, casa, idade, preço justo, EV e movimento.
@@ -26,7 +31,8 @@ description: Gera ou atualiza o plano diário de apostas (futebol, ténis, NBA/W
 5. **Validação:** `estatistica-dados`, com as aprovadas e os veredictos das notícias. Confirma as contas e os ajustes.
 6. **Risco:** `gestao-risco` devolve as aprovadas e as rejeitadas.
 7. **Banca:** `gestao-banca` regista as aprovadas com `banca.py recomendar` e devolve as referências. É o código que calcula a stake, e pode recusar.
-   Os alvos do GitHub só se registam quando o utilizador disser a odd e a casa onde a encontrou (`banca.py recomendar --alvo N --odd O --casa C`).
+   Os alvos do GitHub só se registam quando o utilizador disser a odd e a casa onde a encontrou (`banca.py recomendar --alvo N --odd O --casa C [--segunda-odd S]`); as odds que ele viu abaixo da mínima registam-se com `--sombra`.
+   Se o utilizador fixou um limite para o dia (ex.: "hoje só 5 €"), a soma das stakes do plano respeita-o.
 8. **Gravar:** escreve `planos/AAAA-MM-DD.md` no formato de `CLAUDE.md` (ou acrescenta-lhe a atualização). Inclui a linha "CLV do agente", tirada do `banca.py avaliacao`. Faz commit e push de `planos/` e `dados/`.
 9. **Pré-jogo:** para cada recomendação nova, agenda com `send_later` a mensagem "Pré-jogo: corre a skill pre-jogo para REF", para 40 minutos antes do início (em UTC). Se o jogo começa daqui a menos de 45 minutos, corre já a skill `pre-jogo`.
 10. **Entregar:** mostra o plano, ou só a atualização, ao utilizador.

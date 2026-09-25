@@ -77,6 +77,18 @@ Estado: ✅ feito · ⏳ à espera de ti · ❌ bloqueado
 ## Fase 6 — Validação ✅
 Testes automáticos, uma simulação de um dia completo com dados de exemplo, a documentação, o commit e o push.
 
+## Fase 7 — Pesquisa de 25/09/2026 ✅ (relatório: `reports/Melhorias do agente de apostas.md`)
+Pesquisa em 7 frentes (preço justo sem Pinnacle e CLV, mercados secundários do ténis, ineficiências do ténis, regras de desistência das casas portuguesas, Kelly com várias apostas, fontes acessíveis, LLMs e práticas em Portugal). Notas em `research_notes/Melhorias do agente de apostas/`. Aplicado:
+1. **CLV no caminho do consenso:** cada leitura do tennisexplorer fica em `dados/consenso.json`; o `odds.py fecho` usa a última recolha posterior à recomendação e anterior ao início, com a antecedência (≤ 2 h boa; > 6 h não medido) e o movimento do consenso (M). Antes, este caminho nunca media o CLV e a regra de paragem não podia disparar.
+2. **Odd mínima contra o consenso:** max(5%, 0,02/(p − 0,02)) (Kaunitz), + 2 pp com recolha velha (> 3 h) ou longe do início (> 12 h), + 1 pp nos azarões dos Challengers; ITF e exibições de fora. Preço justo do consenso pelo pior caso entre Shin e potência.
+3. **Stake sobre o EV calibrado:** EV_cal = a + k·EV_aparente, com prior k = 0,5 (consenso) ou 0,7 (Pinnacle), atualizado pela regressão do CLV sobre o EV (peso n/(n + 50)). Com o 1/4 de Kelly sobre o EV aparente, a probabilidade de chegar ao stop-loss era ~9%; assim fica perto de 1%.
+4. **Filtros determinísticos:** EV > 15% só com `--confirmado`; uma só casa acima da mínima exige o dobro do EV; ajuste positivo dos subagentes desligado; uma aposta por jogo; ⚠ quando o consenso anda ≥ 5 pp para o azarão; teto de exposição opcional (`teto_exposicao_pct`, desligado pela regra 10).
+5. **Medição:** registos-sombra (odds vistas nas casas, para medir a cobertura), stake 0 registada para o CLV, avaliação com IC 95%, segmentos (circuito, lado, casa, fonte do fecho) e parte do EV confirmada.
+6. **Ténis:** `odds.py mercados` (sets, "ganha um set", total e handicap de jogos) com um modelo de pontos corrigido (σ = 0,065; testado em 8 596 encontros ATP); `odds.py ev` para odds aumentadas e freebets; freebets na banca; tabela de regras de desistência e fórmula p_PT em `docs/comum.md`.
+7. **Agentes e fontes:** perguntas fechadas, ângulos (fadiga, jet lag, calor, motivação) só como razão para rejeitar, `docs/apis.md` corrigido.
+
+Por decidir pelo utilizador: ligar o teto de exposição (25% = 5 € numa banca de 20 €); a faixa de odds para freebets.
+
 ## Depois de implementado: como avaliar
 - **Semanas 1–4:** o plano gera recomendações e registo-as todas, mesmo que não apostes. Se apostares, que seja com as stakes mínimas. O objetivo é ter CLV médio acima de 0.
 - **Ao fim de 100 recomendações com fecho:** decidir se se continua ou se revê o método, pela regra de paragem.
