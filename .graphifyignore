@@ -1,0 +1,5 @@
+# Dados em bruto (listas de odds e registos): não são conhecimento, só ruído no grafo.
+dados/alvos.json
+dados/consenso.json
+dados/varredura.json
+graphify-out/
