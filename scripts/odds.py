@@ -575,6 +575,7 @@ def cmd_fecho(args):
                 print(f"{r['ref']}: sem odds de fecho (jogo já começou ou mercado fechado)")
                 continue
             r["prob_fecho"] = fechos[r["ref"]] = f"{s['justa']:.4f}"
+            r["fecho_fonte"] = "pinnacle" if s["fonte"] == "pinnacle" else "média das casas"
             print(f"{r['ref']}: fecho {1 / s['justa']:.2f} ({s['fonte']}) · odd {r['odd']} · "
                   f"CLV {banca.pct(banca.clv(r['odd'], s['justa']), True)}")
     fechos.update(fecho_github(recs, args, agora))
@@ -594,6 +595,7 @@ def fecho_github(recs, args, agora):
 
     Só fica gravado depois de o jogo começar, para não perder uma recolha que ainda chegue antes do início."""
     alvo = [r for r in recs if r.get("sport_key") == "github" and not r["prob_fecho"]
+            and r.get("fecho_fonte") != "não medido" and r.get("tipo") != "sombra"
             and (r["ref"] in args.ref if args.ref else minutos(r["inicio"], agora) <= args.minutos)]
     if not alvo:
         return {}
@@ -609,6 +611,9 @@ def fecho_github(recs, args, agora):
         f = fecho_consenso(r, hist)
         if not f:
             print(f"{r['ref']}: sem recolha do consenso posterior à recomendação e a menos de 6 h do início")
+            if minutos(r["inicio"], agora) <= 0:  # já começou: não aparece outra recolha antes do início
+                r["fecho_fonte"] = "não medido"
+                fechos[r["ref"]] = ""
             continue
         p, t, antecedencia = f
         mov = (p - float(r["prob_justa"])) * 100

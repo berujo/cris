@@ -492,12 +492,18 @@ class TestConsensoRecomendacoes(unittest.TestCase):
         def sem_rede():
             raise OSError("sem rede")
         odds.alvos_tenis = sem_rede
-        banca.escrever("recomendacoes.csv", [r], banca.REC)
+        sem_recolha = rec(ref="R2", evento="C vs D", selecao="C", inicio=s["inicio"], recolha=s["recolha"],
+                          odd="1.90", prob_justa="0.5500", sport_key="github")
+        banca.escrever("recomendacoes.csv", [dict(r, ref="R1"), sem_recolha], banca.REC)
         with contextlib.redirect_stdout(io.StringIO()) as saida:
             odds.cmd_fecho(argparse.Namespace(minutos=90, ref=None))
         self.assertIn("CLV +13,4%", saida.getvalue())  # 1,80 × 0,63 − 1
-        gravada = banca.ler("recomendacoes.csv")[0]
+        gravada, nao_medida = banca.ler("recomendacoes.csv")
         self.assertEqual((gravada["prob_fecho"], gravada["fecho_fonte"]), ("0.6300", "consenso"))
+        self.assertEqual((nao_medida["prob_fecho"], nao_medida["fecho_fonte"]), ("", "não medido"))
+        with contextlib.redirect_stdout(io.StringIO()) as saida:
+            odds.cmd_fecho(argparse.Namespace(minutos=90, ref=None))
+        self.assertNotIn("R2", saida.getvalue())  # não volta a ser processada
         with contextlib.redirect_stdout(io.StringIO()) as saida:
             banca.cmd_avaliacao(banca.config(), [], None)
         self.assertIn("CLV médio (IC 95%)", saida.getvalue())
